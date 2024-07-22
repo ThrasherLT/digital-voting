@@ -1,0 +1,65 @@
+name: Rust project CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  build_and_test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # Prioritizing speed over size here.
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: default
+        toolchain: nightly
+        override: true
+
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --verbose
+
+    - name: Run tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --verbose
+
+    - name: Check formatting
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: -- --check
+
+    - name: Lint with Clippy
+      uses: actions-rs/cargo@v1
+      with:
+        command: clippy
+        args: -- -D warnings
+
+    - name: Install cargo-deny
+      uses: actions-rs/install@v0.1
+      with:
+        crate: cargo-deny
+        version: latest
+
+    - name: Check dependencies with cargo-deny
+      run: cargo deny check
+
+    - name: Install cargo-udeps
+      uses: actions-rs/install@v0.1
+      with:
+        crate: cargo-udeps
+        version: latest
+
+    - name: Check unused dependencies with cargo-udeps
+      run: cargo udeps --all-targets
