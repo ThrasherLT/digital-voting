@@ -1,37 +1,34 @@
-// use digital_voting::Error as BlockchainError;
-use digital_voting::Vote;
-use digital_voting::VotingSystem;
-use rand::Rng;
+use anyhow::Result;
+use tracing::level_filters::LevelFilter;
+use tracing_appender::non_blocking::WorkerGuard as TracingWorkerGuard;
 
-fn main() -> Result<(), anyhow::Error> {
-    let mut rng = rand::thread_rng();
-    let mut votes1 = Vec::new();
-    for i in 1..10 {
-        votes1.push(Vote::new(i, rng.gen_range(0..=1), chrono::Utc::now()));
-    }
+// TODO Next milestones: vote batching, smart contracts, docrs, tests and more.
 
-    let mut votes2 = Vec::new();
-    for i in 1..10 {
-        votes2.push(Vote::new(i, rng.gen_range(0..=1), chrono::Utc::now()));
-    }
-
-    let voting_system = VotingSystem::new().add_votes(votes1)?.add_votes(votes2)?;
-    println!("{}", voting_system);
-
-    voting_system.validate()?;
-    println!("Votes are valid");
-
-    println!("{}", voting_system.tally_votes().unwrap());
-
-    voting_system.save_to_file("votes.bin")?;
-    let loaded_voting_system = VotingSystem::load_from_file("votes.bin")?;
-
-    println!("{}", loaded_voting_system);
-
-    loaded_voting_system.validate()?;
-    println!("Votes are still valid");
-
-    println!("{}", loaded_voting_system.tally_votes().unwrap());
+#[tokio::main]
+async fn main() -> Result<()> {
+    let _tracing_worker_guard = start_logger()?;
+    digital_voting::api::server::run_server().await?;
 
     Ok(())
+}
+
+fn start_logger() -> Result<TracingWorkerGuard> {
+    // Set up a rolling file appender
+    std::fs::create_dir_all("logs")?;
+    let log_file = std::fs::File::create("logs/digital_voting.log")?;
+    // Do not let _tracing_worker_guard go out of scope, or the logging thread will be terminated.
+    let (non_blocking_tracing_writer, tracing_worker_guard) =
+        tracing_appender::non_blocking(log_file);
+
+    tracing_subscriber::fmt()
+        // TODO For now allowing all log levels.
+        .with_max_level(LevelFilter::TRACE)
+        .with_writer(non_blocking_tracing_writer)
+        .with_line_number(true)
+        .with_ansi(false)
+        .with_level(true)
+        .try_init()
+        .map_err(|e| anyhow::anyhow!("Failed to initialize logger {e}"))?;
+
+    Ok(tracing_worker_guard)
 }

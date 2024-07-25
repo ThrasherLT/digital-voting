@@ -2,8 +2,12 @@ use std::{collections::HashMap, fmt::Display};
 
 use thiserror::Error;
 
-mod blockchain;
-use crate::blockchain::{BlockValue, Blockchain, Error as BlockchainError};
+pub mod api;
+
+mod chain;
+use chain::blockchain::{BlockValue, Blockchain, Error as BlockchainError};
+
+pub type Timestamp = chrono::DateTime<chrono::Utc>;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -15,19 +19,17 @@ pub enum Error {
     Unknown,
 }
 
-type Timestamp = chrono::DateTime<chrono::Utc>;
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Vote {
-    voter_id: u64,
+    voter_pkey: u64,
     candidate_id: u64,
     timestamp: Timestamp,
 }
 
 impl Vote {
-    pub fn new(voter_id: u64, candidate_id: u64, timestamp: Timestamp) -> Self {
+    pub fn new(voter_pkey: u64, candidate_id: u64, timestamp: Timestamp) -> Self {
         Self {
-            voter_id,
+            voter_pkey,
             candidate_id,
             timestamp,
         }
@@ -39,7 +41,7 @@ impl Display for Vote {
         write!(
             f,
             "Voter {} voted for candidate {} on {}",
-            self.voter_id,
+            self.voter_pkey,
             self.candidate_id,
             self.timestamp.format("%Y-%m-%d %H:%M:%S")
         )
