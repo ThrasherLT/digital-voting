@@ -1,4 +1,4 @@
-name: Rust project CI
+name: Digital Voting CI
 
 # TODO probably a good idea to specify specific toolchain versions in the future.
 
@@ -16,7 +16,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # Prioritizing speed over size here.
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -40,7 +39,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # Prioritizing speed over size here.
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -62,7 +60,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # Prioritizing speed over size here.
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -83,7 +80,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # Prioritizing speed over size here.
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -106,12 +102,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # Prioritizing speed over size here.
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
         profile: default
-        toolchain: stable
+        toolchain: nightly
         override: true
 
     - name: Install cargo-deny
@@ -130,4 +125,4 @@ jobs:
         version: latest
 
     - name: Check unused dependencies with cargo-udeps
-      run: cargo udeps --all-targets
+      run: cargo +nightly udeps --all-targets
