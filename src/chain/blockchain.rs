@@ -3,6 +3,8 @@ use std::fmt::Display;
 use ring::digest;
 use thiserror::Error;
 
+use crate::Timestamp;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Blockchain hash integrity error {} != {}", .0, .1)]
@@ -13,7 +15,7 @@ pub enum Error {
     BinSerialization(#[from] bincode::Error),
     #[error("File IO error: {}", .0)]
     FileIO(#[from] std::io::Error),
-    #[error("Unknown error")]
+    #[error("Unknown blockchain error")]
     Unknown,
 }
 
@@ -104,7 +106,7 @@ impl<T: BlockValue> Display for Blockchain<T> {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Block<T> {
     block_values: Vec<T>,
-    timestamp: chrono::DateTime<chrono::Utc>,
+    timestamp: Timestamp,
     prev_block_hash: Hash,
 }
 
