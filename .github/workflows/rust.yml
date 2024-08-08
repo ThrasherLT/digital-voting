@@ -115,6 +115,7 @@ jobs:
         command: clippy
         args: -- -D warnings
 
+  # TODO This job is taking way too long compared to the rest.
   dependencies:
     name: Check dependencies
     runs-on: ubuntu-latest
