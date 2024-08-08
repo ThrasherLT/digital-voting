@@ -5,6 +5,7 @@ use thiserror::Error;
 pub mod api;
 
 pub mod batcher;
+pub mod set_membership;
 
 mod chain;
 use chain::blockchain::{BlockValue, Blockchain, Error as BlockchainError};
