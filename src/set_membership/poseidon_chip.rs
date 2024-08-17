@@ -35,9 +35,9 @@ where
     S: Spec<Fp, WIDTH, RATE>,
 {
     /// Create a new PoseidonChip with the given configuration.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// - `config` - The configuration for the Poseidon hash function.
     pub fn new(config: PoseidonConfig<WIDTH, RATE, L>) -> Self {
         Self {
@@ -47,9 +47,9 @@ where
     }
 
     /// Configure the Poseidon hash function with the given constraint system.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// - `meta` - The constraint system to configure the Poseidon hash function with.
     pub fn configure(meta: &mut ConstraintSystem<Fp>) -> PoseidonConfig<WIDTH, RATE, L> {
         let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>();
@@ -80,9 +80,9 @@ where
     }
 
     /// Hash the given message words with the Poseidon hash function.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// - `layouter` - The layouter to hash the message words with.
     /// - `message_words` - The message words to hash.
     pub fn hash(

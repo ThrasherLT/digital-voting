@@ -38,23 +38,23 @@ struct SetMembershipConfig {
 
 impl SetMembershipCircuit {
     /// Create a new SetMembershipCircuit with the given leaf value, Merkle proof elements and directions.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// - `value` - The leaf value (not hashed yet) that is being proven to be a member of the set.
     /// - `merkle_proof` - The Merkle proof elements that are used to prove the membership of the leaf.
     /// - `direction` - The directions of the Merkle proof elements.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A new SetMembershipCircuit instance.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// use halo2_proofs::circuit::Value;
     /// use digital_voting::set_membership::SetMembershipCircuit;
-    /// 
+    ///
     /// let value = Value::known(halo2_proofs::pasta::Fp::from(6u64));
     /// let merkle_proof = vec![
     ///     Value::known(halo2_proofs::pasta::Fp::from(1u64)),
@@ -213,9 +213,9 @@ impl Circuit<Fp> for SetMembershipCircuit {
 mod tests {
     use super::*;
 
+    use super::super::poseidon_hasher;
     use crate::utils::byte_ops::convert_u8_to_u64;
     use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
-    use super::super::poseidon_hasher;
 
     // Function to calculate the root of a Merkle tree proof manually.
     // Using this to avoid having to set up a full blown Merkle tree.
