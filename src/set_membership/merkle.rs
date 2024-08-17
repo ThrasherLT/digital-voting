@@ -197,8 +197,8 @@ where
             return Err(Error::ElementOutOfBounds(leaf_index, self.leaves.len()));
         }
         let mut proof = MerkleProof {
-            leaf_index,
-            root: self.nodes.last().unwrap().clone(),
+            _leaf_index: leaf_index,
+            _root: self.nodes.last().unwrap().clone(),
             proof: vec![],
             path: vec![],
         };
@@ -296,8 +296,8 @@ mod tests {
 
             assert_eq!(calc_path[leaf_index], proof.path);
             assert_eq!(calc_proof[leaf_index], proof.proof);
-            assert_eq!(proof.root, root);
-            assert_eq!(leaf_index, proof.leaf_index);
+            assert_eq!(proof._root, root);
+            assert_eq!(leaf_index, proof._leaf_index);
         }
     }
 }
