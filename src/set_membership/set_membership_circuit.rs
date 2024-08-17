@@ -11,7 +11,7 @@ use super::poseidon_chip::{PoseidonChip, PoseidonConfig};
 
 /// halo2 circuit that proves that a given leaf is a member of a set.
 #[derive(Debug, Clone, Default)]
-struct SetMembershipCircuit {
+pub struct SetMembershipCircuit {
     /// The leaf value (not hashed yet) that is being proven to be a member of the set.
     value: Value<Fp>,
     /// The Merkle proof elements that are used to prove the membership of the leaf.
@@ -23,7 +23,7 @@ struct SetMembershipCircuit {
 
 /// Configuration for the SetMembershipCircuit.
 #[derive(Debug, Clone)]
-struct SetMembershipConfig {
+pub struct SetMembershipConfig {
     /// The advice columns for the SetMembershipCircuit.
     advices: [Column<Advice>; 3],
     /// Selector for enforcing boolean values.
@@ -53,7 +53,7 @@ impl SetMembershipCircuit {
     ///
     /// ```
     /// use halo2_proofs::circuit::Value;
-    /// use digital_voting::set_membership::SetMembershipCircuit;
+    /// use digital_voting::set_membership::set_membership_circuit::SetMembershipCircuit;
     ///
     /// let value = Value::known(halo2_proofs::pasta::Fp::from(6u64));
     /// let merkle_proof = vec![
