@@ -18,9 +18,9 @@ type Result<T> = std::result::Result<T, Error>;
 /// A struct containing all the info for Merkle Proof for a leaf in a Merkle Tree.
 pub struct MerkleProof<H> {
     /// The index of the leaf for which the proof is generated.
-    leaf_index: usize,
+    _leaf_index: usize,
     /// The root of the Merkle Tree.
-    root: H,
+    _root: H,
     /// The proof for the leaf.
     proof: Vec<H>,
     /// The path to the leaf from the root. The index of the path element corresponds to the index of the proof element.
