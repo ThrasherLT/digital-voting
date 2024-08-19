@@ -91,8 +91,8 @@ impl From<&u64> for Digest {
 /// # Example
 ///
 /// ```
-/// use digital_voting::set_membership::poseidon_hasher;
-/// use digital_voting::set_membership::poseidon_hasher::Digest;
+/// use digital_voting::set_membership_zkp::poseidon_hasher;
+/// use digital_voting::set_membership_zkp::poseidon_hasher::Digest;
 ///
 /// let input = [Digest([1u8; 32]), Digest([2u8; 32])];
 ///
