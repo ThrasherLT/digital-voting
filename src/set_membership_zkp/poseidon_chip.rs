@@ -1,10 +1,9 @@
 //! Poseidon hash function chip implementation, because the one found in halo2_gadgets can't
 //! be used in a circuit without a lot of boilerplate code.
 
-use halo2_proofs::{circuit::*, pasta::Fp, plonk::*};
+use halo2_proofs::{circuit::*, halo2curves::pasta::Fp, plonk::*};
 
-use halo2_gadgets::poseidon::{primitives::*, Hash, Pow5Chip, Pow5Config};
-use std::convert::TryInto;
+use halo2_poseidon::poseidon::{primitives::*, Hash, Pow5Chip, Pow5Config};
 use std::marker::PhantomData;
 
 /// The Poseidon hash function chip.

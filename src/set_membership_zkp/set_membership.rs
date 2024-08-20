@@ -6,16 +6,20 @@
 use super::merkle::{self, MerkleProof, MerkleTree};
 use super::set_membership_circuit::SetMembershipCircuit;
 
+use halo2_proofs::poly::commitment::ParamsProver;
+use halo2_proofs::poly::ipa::commitment::{IPACommitmentScheme, ParamsIPA};
+use halo2_proofs::poly::ipa::multiopen::ProverIPA;
+use halo2_proofs::poly::VerificationStrategy;
 use rand::rngs::OsRng;
 
 use crate::utils::byte_ops::convert_u8_to_u64;
 use halo2_proofs::circuit::Value;
-use halo2_proofs::pasta::{EqAffine, Fp};
-use halo2_proofs::plonk::{
-    create_proof, keygen_pk, keygen_vk, verify_proof, SingleVerifier, VerifyingKey,
+use halo2_proofs::halo2curves::pasta::{EqAffine, Fp};
+use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, verify_proof, VerifyingKey};
+use halo2_proofs::poly::ipa::strategy::SingleStrategy;
+use halo2_proofs::transcript::{
+    Blake2bRead, Blake2bWrite, Challenge255, TranscriptReadBuffer, TranscriptWriterBuffer,
 };
-use halo2_proofs::poly::commitment::Params;
-use halo2_proofs::transcript::{Blake2bRead, Blake2bWrite, Challenge255};
 use thiserror::Error;
 
 /// Error type for Merkle Tree operations.
@@ -42,7 +46,7 @@ pub struct SetMembershipProof {
     /// Verification key used to verify the proof.
     vk: VerifyingKey<EqAffine>,
     /// Parameters used to generate and verify the proof.
-    params: Params<EqAffine>,
+    params: ParamsIPA<EqAffine>,
     /// The actual proof that the element is a member of the set in bytes.
     proof: Vec<u8>,
 }
@@ -104,13 +108,14 @@ impl SetMembershipProof {
 
         let circuit = SetMembershipCircuit::new(value, proof, path);
 
-        let params: Params<EqAffine> = Params::new(10);
+        let params = ParamsIPA::<EqAffine>::new(10);
         let vk = keygen_vk(&params, &circuit)?;
         let pk = keygen_pk(&params, vk.clone(), &circuit)?;
+        let vvk = vk.pinned();
+        println!("{:#?}", vvk);
+        let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
 
-        let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
-
-        create_proof(
+        create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
             &params,
             &pk,
             &[circuit],
@@ -162,7 +167,7 @@ impl SetMembershipProof {
         Ok(verify_proof(
             &self.params,
             &self.vk,
-            SingleVerifier::new(&self.params),
+            SingleStrategy::new(&self.params),
             &[&[&[root], &[Fp::zero()]]],
             &mut transcript,
         )?)

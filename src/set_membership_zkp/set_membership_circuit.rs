@@ -4,8 +4,8 @@
 //! Poseidon hash function is used instead of sha256, because it's a lot faster in ZKP circuits
 //! and because halo2's support for sha256 is very limited.
 
-use halo2_gadgets::poseidon::primitives::P128Pow5T3;
-use halo2_proofs::{circuit::*, pasta::Fp, plonk::*, poly::Rotation};
+use halo2_poseidon::poseidon::primitives::P128Pow5T3;
+use halo2_proofs::{circuit::*, halo2curves::pasta::Fp, plonk::*, poly::Rotation};
 
 use super::poseidon_chip::{PoseidonChip, PoseidonConfig};
 
@@ -55,14 +55,14 @@ impl SetMembershipCircuit {
     /// use halo2_proofs::circuit::Value;
     /// use digital_voting::set_membership_zkp::set_membership_circuit::SetMembershipCircuit;
     ///
-    /// let value = Value::known(halo2_proofs::pasta::Fp::from(6u64));
+    /// let value = Value::known(halo2_proofs::halo2curves::pasta::Fp::from(6u64));
     /// let merkle_proof = vec![
-    ///     Value::known(halo2_proofs::pasta::Fp::from(1u64)),
-    ///     Value::known(halo2_proofs::pasta::Fp::from(2u64)),
+    ///     Value::known(halo2_proofs::halo2curves::pasta::Fp::from(1u64)),
+    ///     Value::known(halo2_proofs::halo2curves::pasta::Fp::from(2u64)),
     /// ];
     /// let direction = vec![
-    ///   Value::known(halo2_proofs::pasta::Fp::from(0u64)),
-    ///  Value::known(halo2_proofs::pasta::Fp::from(1u64)),
+    ///     Value::known(halo2_proofs::halo2curves::pasta::Fp::from(0u64)),
+    ///     Value::known(halo2_proofs::halo2curves::pasta::Fp::from(1u64)),
     /// ];
     /// let circuit = SetMembershipCircuit::new(value, merkle_proof, direction);
     /// ```
@@ -215,7 +215,7 @@ mod tests {
 
     use super::super::poseidon_hasher;
     use crate::utils::byte_ops::convert_u8_to_u64;
-    use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
+    use halo2_proofs::dev::MockProver;
 
     // Function to calculate the root of a Merkle tree proof manually.
     // Using this to avoid having to set up a full blown Merkle tree.

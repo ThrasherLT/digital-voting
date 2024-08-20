@@ -5,8 +5,8 @@
 //! hard to convert to other types.
 
 use crate::utils::byte_ops::convert_u8_to_u64;
-use halo2_gadgets::poseidon::primitives::{self as poseidon, ConstantLength, P128Pow5T3};
-use halo2_proofs::pasta::Fp;
+use halo2_poseidon::poseidon::primitives::{self as poseidon, ConstantLength, P128Pow5T3};
+use halo2_proofs::halo2curves::pasta::Fp;
 
 // TODO After trying multiple different approaches (array, uin256 crates, etc), couldn't figure a way to
 // avoid having to create a new type for the hash value, since all existing types would be very unwieldy to use
