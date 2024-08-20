@@ -53,7 +53,7 @@ impl SetMembershipCircuit {
     ///
     /// ```
     /// use halo2_proofs::circuit::Value;
-    /// use digital_voting::set_membership::set_membership_circuit::SetMembershipCircuit;
+    /// use digital_voting::set_membership_zkp::set_membership_circuit::SetMembershipCircuit;
     ///
     /// let value = Value::known(halo2_proofs::pasta::Fp::from(6u64));
     /// let merkle_proof = vec![
