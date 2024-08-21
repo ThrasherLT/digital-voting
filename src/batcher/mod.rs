@@ -2,7 +2,7 @@
 //! There's are two batcher crates on crates.io, but one of them is completely undocumented and thus sketchy
 //! and the other one seems way focused on batching complex operations rather than just data.
 
-use std::{marker::PhantomData, rc::Rc, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use chrono::Utc;
 use tokio::sync::{
@@ -32,8 +32,6 @@ pub struct Batcher<T> {
     rx: Receiver<T>,
     /// Buffer for the actual batched items.
     batch: Vec<T>,
-    /// Marker to make sure this struct is not Send.
-    _not_send_marker: NotSend,
 }
 
 impl<T> Batcher<T> {
@@ -68,9 +66,6 @@ impl<T> Batcher<T> {
                 batch_ready_notify,
                 rx,
                 batch: Vec::new(),
-                _not_send_marker: NotSend {
-                    _marker: PhantomData,
-                },
             },
             tx,
         )
@@ -170,13 +165,6 @@ impl<T> Batcher<T> {
         // Not sure how fast this is due to extra allocations.
         self.batch.drain(0..batch_size).collect()
     }
-}
-
-/// Marker to make sure this struct is not Send.
-#[allow(dead_code)]
-struct NotSend {
-    /// Including a PhantomData<Rc<()>> makes this struct not Send
-    _marker: PhantomData<Rc<()>>,
 }
 
 #[cfg(test)]
