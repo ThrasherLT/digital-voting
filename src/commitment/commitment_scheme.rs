@@ -1,6 +1,18 @@
 //! Module to construct, use and track commitment schemes.
 
+// TODO add examples whe the API is more stable.
+
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+/// Errors that can occur when working with commitment schemes.
+#[derive(Error, Debug)]
+pub enum Error {
+    /// The provide commitment could not be verified.
+    #[error("The commitment is invalid or does not match the value and nonce")]
+    CommitmentInvalid,
+}
+type Result<T> = std::result::Result<T, Error>;
 
 /// The actual commitment value wrapped in a struct for convenience and with Serde implementations.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -32,9 +44,13 @@ where
     }
 
     /// Verify a commitment.
-    pub fn verify(&self, value: &V, nonce: &N, commitment: &Commitment) -> bool {
+    pub fn verify(&self, value: &V, nonce: &N, commitment: &Commitment) -> Result<()> {
         let hash = (self.commitment_fn)(value, nonce);
-        hash.as_ref() == commitment.0.as_slice()
+        if hash.as_ref() == commitment.0.as_slice() {
+            Ok(())
+        } else {
+            Err(Error::CommitmentInvalid)
+        }
     }
 }
 
@@ -60,6 +76,8 @@ mod tests {
         let nonce = 0;
         let commitment = commitment_scheme.commit(&value, &nonce);
 
-        assert!(commitment_scheme.verify(&value, &nonce, &commitment));
+        commitment_scheme
+            .verify(&value, &nonce, &commitment)
+            .unwrap();
     }
 }

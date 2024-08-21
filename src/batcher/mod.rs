@@ -112,6 +112,7 @@ impl<T> Batcher<T> {
                         _ = self.batch_ready_notify.notified() => {
                             return self.flush();
                         }
+                        // TODO might need to wait for tx permit here to prevent deadlock.
                         item = self.rx.recv() => {
                             match item {
                                 Some(item) => {

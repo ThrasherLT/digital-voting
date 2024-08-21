@@ -7,6 +7,7 @@ pub mod api;
 pub mod batcher;
 pub mod commitment;
 pub mod set_membership_zkp;
+pub mod signature;
 mod utils;
 
 mod chain;
