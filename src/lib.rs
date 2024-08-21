@@ -5,6 +5,7 @@ use thiserror::Error;
 pub mod api;
 
 pub mod batcher;
+pub mod commitment;
 pub mod set_membership_zkp;
 mod utils;
 
