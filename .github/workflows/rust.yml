@@ -23,6 +23,11 @@ jobs:
         toolchain: stable
         override: true
 
+    - name: cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}  
+  
     # Not storing the artifacts yet, because the application is too bare bones for now.
     # And since we're not storing artifacts, we can just check instead of build.
     - name: Build
@@ -46,6 +51,11 @@ jobs:
         toolchain: stable
         override: true
 
+    - name: cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}  
+  
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:
@@ -67,6 +77,11 @@ jobs:
         toolchain: stable
         override: true
   
+    - name: cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
+
     - name: Check formatting
       uses: actions-rs/cargo@v1
       with:
@@ -87,7 +102,12 @@ jobs:
         profile: default
         toolchain: stable
         override: true
-  
+
+    - name: cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ runner.os }}-cargo-docrs-${{ hashFiles('**/Cargo.lock') }}  
+
     - name: Build documentation
       uses: actions-rs/cargo@v1
       with:
@@ -108,7 +128,11 @@ jobs:
         toolchain: stable
         override: true
       
-      
+    - name: cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}  
+
     - name: Lint with Clippy
       uses: actions-rs/cargo@v1
       with:
@@ -137,6 +161,11 @@ jobs:
         crate: cargo-deny
         version: latest
 
+    - name: cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ runner.os }}-cargo-deny-${{ hashFiles('**/Cargo.lock') }}    
+  
     - name: Check dependencies with cargo-deny
       run: cargo deny check
 
@@ -146,5 +175,10 @@ jobs:
         crate: cargo-udeps
         version: latest
 
+    - name: cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        key: ${{ runner.os }}-cargo-udeps-${{ hashFiles('**/Cargo.lock') }}  
+    
     - name: Check unused dependencies with cargo-udeps
       run: cargo +nightly udeps --all-targets
