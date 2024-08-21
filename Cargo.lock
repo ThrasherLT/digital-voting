@@ -727,8 +727,7 @@ dependencies = [
 [[package]]
 name = "halo2_gadgets"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "126a150072b0c38c7b573fe3eaf0af944a7fed09e154071bf2436d3f016f7230"
+source = "git+https://github.com/ThrasherLT/halo2.git?branch=ThrasherLT/VerifyingKey-serialization#cbb5c89d3194fee667f9017326b46f90aea42505"
 dependencies = [
  "arrayvec",
  "bitvec",
@@ -745,8 +744,7 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b867a8d9bbb85fca76fff60652b5cd19b853a1c4d0665cb89bee68b18d2caf0"
+source = "git+https://github.com/ThrasherLT/halo2.git?branch=ThrasherLT/VerifyingKey-serialization#cbb5c89d3194fee667f9017326b46f90aea42505"
 dependencies = [
  "blake2b_simd",
  "ff",
