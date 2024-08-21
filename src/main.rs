@@ -2,8 +2,6 @@ use anyhow::Result;
 use tracing::level_filters::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard as TracingWorkerGuard;
 
-// TODO Next milestones: vote batching, smart contracts, docrs, tests and more.
-
 #[tokio::main]
 async fn main() -> Result<()> {
     let _tracing_worker_guard = start_logger()?;
