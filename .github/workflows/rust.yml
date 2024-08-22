@@ -1,7 +1,5 @@
 name: Digital Voting CI
 
-# TODO probably a good idea to specify specific toolchain versions in the future.
-
 on:
   push:
     branches: [ main ]
@@ -9,82 +7,111 @@ on:
     types: [opened, synchronize]
 
 jobs:
-  build:
-    name: Build (only check for now)
-    runs-on: ubuntu-latest
+  check:
+    name: Check
+    strategy:
+      matrix:
+        include:
+        - os: ubuntu-latest
+          target: x86_64-unknown-linux-gnu
+        # - os: ubuntu-latest
+        #   target: aarch64-unknown-linux-gnu
+        # - os: macos-latest
+        #   target: x86_64-apple-darwin
+        - os: macos-latest
+          target: aarch64-apple-darwin
+        - os: windows-latest
+          target: x86_64-pc-windows-msvc
+        # - os: windows-latest
+        #   target: i686-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: default
-        toolchain: stable
-        override: true
+    - name: Install Rust Default Toolchain
+      run: rustup toolchain install stable --profile minimal
+          
+    - name: Add target
+      run: rustup target add ${{ matrix.target }}
 
     - name: cache
       uses: Swatinem/rust-cache@v2
       with:
-        key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}  
-  
-    # Not storing the artifacts yet, because the application is too bare bones for now.
-    # And since we're not storing artifacts, we can just check instead of build.
-    - name: Build
-      uses: actions-rs/cargo@v1
-      with:
-        command: check
-        args: --verbose
+        key: ${{ matrix.target }}-cargo-check-${{ hashFiles('**/Cargo.lock') }}  
+        
+    - name: Check project
+      run: cargo check --verbose --target ${{ matrix.target }}
+
 
   test:
     name: Test
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+        - os: ubuntu-latest
+          target: x86_64-unknown-linux-gnu
+        # - os: ubuntu-latest
+        #   target: aarch64-unknown-linux-gnu
+        # - os: macos-latest
+          # target: x86_64-apple-darwin
+        - os: macos-latest
+          target: aarch64-apple-darwin
+        - os: windows-latest
+          target: x86_64-pc-windows-msvc
+        # - os: windows-latest
+        #   target: i686-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: default
-        toolchain: stable
-        override: true
-
+    - name: Install Rust Default Toolchain
+      run: rustup toolchain install stable --profile minimal
+          
+    - name: Add target
+      run: rustup target add ${{ matrix.target }}
+  
     - name: cache
       uses: Swatinem/rust-cache@v2
       with:
-        key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}  
+        key: ${{ matrix.target }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}  
   
     - name: Run tests
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --verbose
+      run: cargo test --verbose --target ${{ matrix.target }}
+
 
   formatting:
     name: Check formatting
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+        - os: ubuntu-latest
+          target: x86_64-unknown-linux-gnu
+        # - os: ubuntu-latest
+        #   target: aarch64-unknown-linux-gnu
+        # - os: macos-latest
+          # target: x86_64-apple-darwin
+        - os: macos-latest
+          target: aarch64-apple-darwin
+        - os: windows-latest
+          target: x86_64-pc-windows-msvc
+        # - os: windows-latest
+        #   target: i686-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: default
-        toolchain: stable
-        override: true
+    - name: Install Rust Default Toolchain
+      run: rustup toolchain install stable --profile default
+          
+    - name: Add target
+      run: rustup target add ${{ matrix.target }}
   
-    - name: cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: ${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
-
     - name: Check formatting
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: -- --check
+      run: cargo fmt -- --check
+
 
   docrs:
     name: Build documentation
@@ -93,12 +120,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: default
-        toolchain: stable
-        override: true
+    - name: Install Rust Default Toolchain
+      run: rustup toolchain install stable --profile default
 
     - name: cache
       uses: Swatinem/rust-cache@v2
@@ -110,30 +133,43 @@ jobs:
       with:
         command: doc
 
+
   lint:
     name: Run linters
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+        - os: ubuntu-latest
+          target: x86_64-unknown-linux-gnu
+        # - os: ubuntu-latest
+        #   target: aarch64-unknown-linux-gnu
+        # - os: macos-latest
+          # target: x86_64-apple-darwin
+        - os: macos-latest
+          target: aarch64-apple-darwin
+        - os: windows-latest
+          target: x86_64-pc-windows-msvc
+        # - os: windows-latest
+        #   target: i686-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: default
-        toolchain: stable
-        override: true
-      
+    - name: Install Rust Default Toolchain
+      run: rustup toolchain install stable --profile default
+          
+    - name: Add target
+      run: rustup target add ${{ matrix.target }}
+
     - name: cache
       uses: Swatinem/rust-cache@v2
       with:
-        key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}  
+        key: ${{ matrix.target }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}  
 
     - name: Lint with Clippy
-      uses: actions-rs/cargo@v1
-      with:
-        command: clippy
-        args: -- -D warnings
+      run: cargo clippy -- -D warnings --target ${{ matrix.target }}
+
 
   dependencies:
     name: Check dependencies
@@ -149,15 +185,10 @@ jobs:
     - name: cache
       uses: Swatinem/rust-cache@v2
       with:
-        key: ${{ runner.os }}-cargo-deny-${{ hashFiles('**/Cargo.lock') }}    
+        key: ${{ runner.os }}-cargo-dependencies-${{ hashFiles('**/Cargo.lock') }}    
   
     - name: Check dependencies with cargo-deny
       run: cargo deny check
 
-    - name: cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: ${{ runner.os }}-cargo-udeps-${{ hashFiles('**/Cargo.lock') }}  
-    
     - name: Check unused dependencies with cargo-udeps
       run: cargo +nightly udeps --all-targets
