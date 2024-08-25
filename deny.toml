@@ -70,6 +70,7 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 # A list of advisory IDs to ignore. Note that ignored advisories will still
 # output a note when they are encountered.
 ignore = [
+    {  id = "RUSTSEC-2023-0071", reason = "The Marvin Attack only affects deterministicly padded RSA, while this crate uses PSS under the hood" },
     #"RUSTSEC-0000-0000",
     #{ id = "RUSTSEC-0000-0000", reason = "you can specify a reason the advisory is ignored" },
     #"a-crate-that-is-yanked@0.1.1", # you can also ignore yanked crate versions if you wish
@@ -229,7 +230,7 @@ unknown-git = "warn"
 # if not specified. If it is specified but empty, no registries are allowed.
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 # List of URLs for allowed Git repositories
-allow-git = []
+allow-git = ["https://github.com/ThrasherLT/halo2.git?branch=ThrasherLT%2FVerifyingKey-serialization"]
 
 [sources.allow-org]
 # 1 or more github.com organizations to allow git sources for

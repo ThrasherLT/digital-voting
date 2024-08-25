@@ -24,3 +24,4 @@ tracing-actix-web = "0.7.11"
 # TODO keep in mind that halo2 paralellism may be an issue with Tokio
 halo2_proofs = { git = "https://github.com/ThrasherLT/halo2.git", branch = "ThrasherLT/VerifyingKey-serialization" }
 halo2_gadgets = { git = "https://github.com/ThrasherLT/halo2.git", branch = "ThrasherLT/VerifyingKey-serialization" }
+blind-rsa-signatures = "0.15.1"
