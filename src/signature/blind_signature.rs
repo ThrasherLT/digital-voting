@@ -3,6 +3,12 @@
 //! user with the signature.
 //! Also acts as a wrapper around the blind_rsa_signatures crate.
 
+// TODO blind_rsa_signatures uses the rsa crate which is vulnerable to the Marvin attack, but
+// the blind_rsa_signatures crate uses pss padding, so in theory the vulnerability should be mitigated,
+// but proper tests should still be done.
+// Also the blind_rsa_signatures crate has a message_randomizer feature which does not seem useful
+// but should still be investigated if not using it opens us up to vulnerabilities.
+
 use blind_rsa_signatures::{self, KeyPair, Options};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
