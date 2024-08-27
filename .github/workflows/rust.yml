@@ -41,7 +41,7 @@ jobs:
         key: ${{ matrix.target }}-cargo-check-${{ hashFiles('**/Cargo.lock') }}  
         
     - name: Check project
-      run: cargo check --verbose --target ${{ matrix.target }}
+      run: cargo check --verbose --workspace --target ${{ matrix.target }}
 
 
   test:
@@ -78,7 +78,7 @@ jobs:
         key: ${{ matrix.target }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}  
   
     - name: Run tests
-      run: cargo test --verbose --target ${{ matrix.target }}
+      run: cargo test --verbose --workspace --target ${{ matrix.target }}
 
 
   formatting:
@@ -129,9 +129,7 @@ jobs:
         key: ${{ runner.os }}-cargo-docrs-${{ hashFiles('**/Cargo.lock') }}  
 
     - name: Build documentation
-      uses: actions-rs/cargo@v1
-      with:
-        command: doc
+      run: cargo doc --verbose --workspace --no-deps
 
 
   lint:
@@ -188,7 +186,7 @@ jobs:
         key: ${{ runner.os }}-cargo-dependencies-${{ hashFiles('**/Cargo.lock') }}    
   
     - name: Check dependencies with cargo-deny
-      run: cargo deny check
+      run: cargo deny --workspace check
 
     - name: Check unused dependencies with cargo-udeps
-      run: cargo +nightly udeps --all-targets
+      run: cargo +nightly udeps --workspace --all-targets

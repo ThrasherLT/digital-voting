@@ -49,7 +49,7 @@ type LeafHashFn<T, H> = Box<dyn Fn(&T) -> H>;
 /// # Example
 ///
 /// ```
-/// use digital_voting::set_membership_zkp::merkle::MerkleTree;
+/// use crypto::set_membership_zkp::merkle::MerkleTree;
 ///
 /// struct MyStruct {
 ///     // A which has u64 as the initial data and [u8; 32] as the hashed data.
@@ -119,7 +119,7 @@ where
     /// # Example
     ///
     /// ```
-    /// use digital_voting::set_membership_zkp::merkle::MerkleTree;
+    /// use crypto::set_membership_zkp::merkle::MerkleTree;
     ///
     /// fn mock_hash(preimages: [u64; 2]) -> u64 {
     ///     preimages[0] ^ preimages[1]
@@ -206,7 +206,7 @@ where
     /// # Example
     ///
     /// ```
-    /// use digital_voting::set_membership_zkp::merkle::MerkleTree;
+    /// use crypto::set_membership_zkp::merkle::MerkleTree;
     ///
     /// fn mock_hash(preimages: [u64; 2]) -> u64 {
     ///     preimages[0] ^ preimages[1]
@@ -241,7 +241,7 @@ where
     /// # Example
     ///
     /// ```
-    /// use digital_voting::set_membership_zkp::merkle::MerkleTree;
+    /// use crypto::set_membership_zkp::merkle::MerkleTree;
     ///
     /// fn mock_hash(preimages: [u64; 2]) -> u64 {
     ///     preimages[0] ^ preimages[1]

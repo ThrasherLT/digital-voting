@@ -168,10 +168,10 @@ impl SetMembershipProof {
     /// # Example
     ///
     /// ```
-    /// use digital_voting::set_membership_zkp::poseidon_hasher::{self, Digest};
-    /// use digital_voting::set_membership_zkp::set_membership::SetMembershipProof;
-    /// use digital_voting::set_membership_zkp::merkle::MerkleTree;
-    /// use digital_voting::set_membership_zkp::set_membership::SetMembershipParams;
+    /// use crypto::set_membership_zkp::poseidon_hasher::{self, Digest};
+    /// use crypto::set_membership_zkp::set_membership::SetMembershipProof;
+    /// use crypto::set_membership_zkp::merkle::MerkleTree;
+    /// use crypto::set_membership_zkp::set_membership::SetMembershipParams;
     ///
     /// let set = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     /// let merkle_tree = MerkleTree::<u64, [u8; 32]>::new(
@@ -250,10 +250,10 @@ impl SetMembershipProof {
     /// # Example
     ///
     /// ```
-    /// use digital_voting::set_membership_zkp::poseidon_hasher::{self, Digest};
-    /// use digital_voting::set_membership_zkp::set_membership::SetMembershipProof;
-    /// use digital_voting::set_membership_zkp::merkle::MerkleTree;
-    /// use digital_voting::set_membership_zkp::set_membership::SetMembershipParams;
+    /// use crypto::set_membership_zkp::poseidon_hasher::{self, Digest};
+    /// use crypto::set_membership_zkp::set_membership::SetMembershipProof;
+    /// use crypto::set_membership_zkp::merkle::MerkleTree;
+    /// use crypto::set_membership_zkp::set_membership::SetMembershipParams;
     ///
     /// let set = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     /// let merkle_tree = MerkleTree::<u64, [u8; 32]>::new(
