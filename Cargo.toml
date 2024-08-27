@@ -2,6 +2,9 @@
 name = "digital-voting"
 version = "0.1.0"
 edition = "2021"
+description = """
+A system for both private and transparent electronic elections
+"""
 publish = false
 license = "Apache-2.0"
 repository = "https://github.com/your/repo"
@@ -13,12 +16,6 @@ resolver = "2"
 members = [
 	"subcrates/*",
 ]
-
-[workspace.package]
-edition = "2021"
-publish = false
-license = "Apache-2.0"
-repository = "https://github.com/your/repo"
 
 [workspace.dependencies]
 thiserror = "1.0.63"

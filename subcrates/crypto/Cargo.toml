@@ -2,6 +2,13 @@
 name = "crypto"
 version = "0.1.0"
 edition = "2021"
+description = """
+Cryptography for both private and transparent electronic elections
+"""
+publish = false
+license = "Apache-2.0"
+repository = "https://github.com/your/repo"
+
 
 [dependencies]
 rand = "0.8.5"

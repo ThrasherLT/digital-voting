@@ -131,7 +131,7 @@ jobs:
     - name: Build documentation
       uses: actions-rs/cargo@v1
       with:
-        command: doc --verbose --workspace --no-deps
+        command: cargo doc --verbose --workspace --no-deps
 
 
   lint:
