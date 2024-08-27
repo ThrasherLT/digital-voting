@@ -90,6 +90,9 @@ impl Signature {
 mod tests {
     use super::*;
 
+    use wasm_bindgen_test::wasm_bindgen_test;
+
+    #[wasm_bindgen_test]
     #[test]
     fn test_signature() {
         let message = b"hello world";

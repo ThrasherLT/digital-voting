@@ -190,3 +190,21 @@ jobs:
 
     - name: Check unused dependencies with cargo-udeps
       run: cargo +nightly udeps --workspace --all-targets
+
+  wasm-test:
+    name: Test on WASM
+    runs-on: ubuntu-latest
+    # Using custom container to avoid waiting for wasm-pack and chromium driver to be installed
+    container:
+      image: thrasherlt/digital-voting-rust-multi-toolchain:latest
+
+    steps:
+      - uses: actions/checkout@v2
+  
+      - name: cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: wasm-cargo-test-${{ hashFiles('**/Cargo.lock') }}    
+    
+      - name: Run tests on WASM
+        run: wasm-pack test --chrome --headless subcrates/crypto/

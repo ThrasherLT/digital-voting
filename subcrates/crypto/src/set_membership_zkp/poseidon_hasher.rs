@@ -112,7 +112,10 @@ pub fn hash(input: [Digest; 2]) -> Digest {
 mod tests {
     use super::*;
 
+    // use wasm_bindgen_test::wasm_bindgen_test;
+
     // TODO, need to find out test values and make sure there aren't any bugs in the poseidon hash or the implementation around it.
+    // #[wasm_bindgen_test]
     #[ignore]
     #[test]
     fn test_poseidon_hasher_test_values() {

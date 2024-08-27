@@ -295,8 +295,11 @@ impl SetMembershipProof {
 mod tests {
     use super::*;
 
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     use super::super::poseidon_hasher::{self, Digest};
 
+    #[wasm_bindgen_test]
     #[test]
     fn test_prove_and_verify() {
         let params = SetMembershipParams::new();

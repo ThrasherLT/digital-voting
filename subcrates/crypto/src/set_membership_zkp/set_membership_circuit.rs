@@ -213,6 +213,8 @@ impl Circuit<Fp> for SetMembershipCircuit {
 mod tests {
     use super::*;
 
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     use super::super::poseidon_hasher;
     use crate::utils::byte_ops::convert_u8_to_u64;
     use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
@@ -231,6 +233,7 @@ mod tests {
         return digest.0;
     }
 
+    #[wasm_bindgen_test]
     #[test]
     fn test_circuit_legit() {
         let leaf = 6u64;
@@ -256,6 +259,7 @@ mod tests {
         prover.assert_satisfied();
     }
 
+    #[wasm_bindgen_test]
     #[test]
     fn test_circuit_falsified() {
         let leaf = 6u64;
