@@ -302,6 +302,8 @@ where
 mod tests {
     use super::*;
 
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     // TODO add tests with more different data types.
 
     // A mock hasher to avoid having to link full blown hashers to this crate
@@ -310,6 +312,7 @@ mod tests {
         preimages[0] ^ preimages[1]
     }
 
+    #[wasm_bindgen_test]
     #[test]
     fn test_merkle_tree_empty() {
         let leaves: Vec<u64> = vec![];
@@ -321,6 +324,7 @@ mod tests {
         assert!(tree.is_err());
     }
 
+    #[wasm_bindgen_test]
     #[test]
     fn test_merkle_tree_proof_out_of_bounds() {
         let leaves = vec![1u64, 2u64, 3u64];
@@ -333,6 +337,7 @@ mod tests {
         assert!(tree.get_proof(leaves.len()).is_err());
     }
 
+    #[wasm_bindgen_test]
     #[test]
     fn test_merkle_tree() {
         let leaves = vec![1u64, 2u64, 3u64];

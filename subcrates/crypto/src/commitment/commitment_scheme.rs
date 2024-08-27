@@ -58,6 +58,8 @@ where
 mod tests {
     use super::*;
 
+    use wasm_bindgen_test::wasm_bindgen_test;
+
     // TODO add tests with more different data types.
 
     // A mock hasher to avoid having to link full blown hashers to this crate
@@ -66,6 +68,7 @@ mod tests {
         (preimages[0] ^ preimages[1]).to_le_bytes()
     }
 
+    #[wasm_bindgen_test]
     #[test]
     fn test_commitment() {
         let hash_fn = Box::new(|value: &u64, nonce: &u64| mock_hash([*value, *nonce]));
