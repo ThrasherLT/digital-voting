@@ -129,9 +129,7 @@ jobs:
         key: ${{ runner.os }}-cargo-docrs-${{ hashFiles('**/Cargo.lock') }}  
 
     - name: Build documentation
-      uses: actions-rs/cargo@v1
-      with:
-        command: cargo doc --verbose --workspace --no-deps
+      run: cargo doc --verbose --workspace --no-deps
 
 
   lint:
