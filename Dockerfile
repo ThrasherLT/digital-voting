@@ -15,7 +15,7 @@ RUN rustup toolchain install nightly
 RUN cargo +nightly install cargo-udeps
 RUN cargo install wasm-pack
 RUN apt update
-RUN apt install -y chromium-driver
+RUN apt install -y chromium-driver clang
 
 LABEL version="1.0"
 LABEL description="Docker image with Rust nightly and linting tools preinstalled"
