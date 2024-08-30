@@ -1,11 +1,31 @@
 use anyhow::Result;
+use clap::Parser;
 use tracing::level_filters::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard as TracingWorkerGuard;
 
+use digital_voting::api::server_cli::{Args, StdioReader};
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args = Args::parse();
+    println!("Args: {:?}", args);
     let _tracing_worker_guard = start_logger()?;
-    digital_voting::api::server::run_server().await?;
+
+    tokio::task::spawn_blocking(|| {
+        let mut stdio_reader = StdioReader::new().unwrap();
+        loop {
+            let line = match stdio_reader.read_stdio_blocking() {
+                Ok(line) => line,
+                Err(e) => {
+                    println!("Quitting: {:?}, send interrupt again to kill the server", e);
+                    break;
+                }
+            };
+            println!("Read line: {:?}", line);
+        }
+    });
+
+    digital_voting::api::server::run_server(args.socket_addr).await?;
 
     Ok(())
 }

@@ -9,6 +9,9 @@
 // Also the blind_rsa_signatures crate has a message_randomizer feature which does not seem useful
 // but should still be investigated if not using it opens us up to vulnerabilities.
 
+use std::str::FromStr;
+
+use base64::prelude::*;
 use blind_rsa_signatures::{self, KeyPair, Options};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -23,6 +26,9 @@ pub enum Error {
     /// This should never happen, since the unblinding secret is set during the blinding process.
     #[error("Unblinding secret is missing from unblinder")]
     UnblindingSecretMissing,
+    /// Invalid base64 encoding found while parsing. Perhaps there's an issue with the public key input?
+    #[error("Invalid base64 {:?}", .0)]
+    InvalidBase64(#[from] base64::DecodeError),
 }
 type Result<T> = std::result::Result<T, Error>;
 
@@ -31,7 +37,7 @@ type Result<T> = std::result::Result<T, Error>;
 
 /// A public key for blind signatures.
 /// Wrapper around the public key from the blind signature crate.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Publickey(pub Vec<u8>);
 
 impl TryFrom<Publickey> for blind_rsa_signatures::PublicKey {
@@ -39,6 +45,21 @@ impl TryFrom<Publickey> for blind_rsa_signatures::PublicKey {
 
     fn try_from(pk: Publickey) -> Result<blind_rsa_signatures::PublicKey> {
         blind_rsa_signatures::PublicKey::from_der(&pk.0).map_err(Error::from)
+    }
+}
+
+impl std::fmt::Display for Publickey {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
+    }
+}
+
+impl FromStr for Publickey {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
+        Ok(Publickey(bytes))
     }
 }
 
