@@ -18,7 +18,6 @@ rand = "0.8.5"
 halo2_proofs = { git = "https://github.com/ThrasherLT/halo2.git", branch = "ThrasherLT/VerifyingKey-serialization", default-features = false, features = ["batch"] }
 halo2_gadgets = { git = "https://github.com/ThrasherLT/halo2.git", branch = "ThrasherLT/VerifyingKey-serialization" }
 blind-rsa-signatures = "0.15.1"
-serde_with = { version = "3.9.0", features = ["base64", "hex"] }
 
 # wasm-bindgen = "0.2.93"
 
