@@ -37,7 +37,7 @@ tokio = { version = "1.39.3", features = ["full", "test-util"] }
 tracing-subscriber = "0.3.18"
 tracing-appender = "0.2.3"
 tracing-actix-web = "0.7.11"
-clap = { version = "4.5.16", features = ["derive"] }
+clap = { version = "4.5.17", features = ["derive"] }
 rustyline = { version = "14.0.0", features = ["derive"] }
 
 ring.workspace = true
