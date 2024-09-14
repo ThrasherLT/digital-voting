@@ -1,3 +1,6 @@
+// TODO
+#![allow(clippy::missing_errors_doc)]
+
 use std::{collections::HashMap, fmt::Display};
 
 use thiserror::Error;

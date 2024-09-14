@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
         }
     });
 
-    digital_voting::api::server::run_server(args.socket_addr).await?;
+    digital_voting::api::server::run(args.socket_addr).await?;
 
     Ok(())
 }

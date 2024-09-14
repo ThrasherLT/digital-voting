@@ -100,6 +100,10 @@ impl StdioReader {
     ///
     /// The line read from stdio.
     ///
+    /// # Panics
+    ///
+    /// If the helper struct isn't set, but that shouldn't happen.
+    ///
     /// # Errors
     ///
     /// If there was an error reading from stdio.

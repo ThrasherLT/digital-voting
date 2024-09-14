@@ -4,16 +4,18 @@ use digital_voting::{Vote, VotingSystem};
 // TODO This test will probably become deprecated in the near future.
 #[test]
 async fn test_voting_system_happy_path() {
-    let mut votes1 = Vec::new();
-    votes1.push(Vote::new(1, 0, chrono::Utc::now()));
-    votes1.push(Vote::new(2, 0, chrono::Utc::now()));
-    votes1.push(Vote::new(3, 1, chrono::Utc::now()));
-    votes1.push(Vote::new(4, 0, chrono::Utc::now()));
+    let votes1 = vec![
+        Vote::new(1, 0, chrono::Utc::now()),
+        Vote::new(2, 0, chrono::Utc::now()),
+        Vote::new(3, 1, chrono::Utc::now()),
+        Vote::new(4, 0, chrono::Utc::now()),
+    ];
 
-    let mut votes2 = Vec::new();
-    votes2.push(Vote::new(5, 0, chrono::Utc::now()));
-    votes2.push(Vote::new(6, 0, chrono::Utc::now()));
-    votes2.push(Vote::new(7, 1, chrono::Utc::now()));
+    let votes2 = vec![
+        Vote::new(5, 0, chrono::Utc::now()),
+        Vote::new(6, 0, chrono::Utc::now()),
+        Vote::new(7, 1, chrono::Utc::now()),
+    ];
 
     let voting_system = VotingSystem::new()
         .add_votes(votes1)

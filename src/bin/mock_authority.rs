@@ -7,7 +7,7 @@ use actix_web::{get, post, routes, web, App, HttpResponse, HttpServer, Responder
 use anyhow::Result;
 use clap::Parser;
 use crypto::signature::blind_signature::{BlindSignature, BlindSigner, BlindedMessage};
-use digital_voting::json_base64::json_base64_ser;
+use digital_voting::json_base64::serde_base64_json;
 use digital_voting::logging::start_logger;
 use digital_voting::Timestamp;
 use serde::{self, Deserialize, Serialize};
@@ -84,11 +84,11 @@ pub async fn get_pkey(data: web::Data<AppState>) -> impl Responder {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct VerificationRequest {
-    #[serde(with = "json_base64_ser")]
+    #[serde(with = "serde_base64_json")]
     pkey: Vec<u8>,
     authentication_data: String,
     timestamp: Timestamp,
-    #[serde(with = "json_base64_ser")]
+    #[serde(with = "serde_base64_json")]
     signature: Vec<u8>,
 }
 

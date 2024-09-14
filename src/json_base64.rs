@@ -1,4 +1,4 @@
-pub mod json_base64_ser {
+pub mod serde_base64_json {
     use base64::prelude::*;
     use serde::{Deserialize, Serialize};
     use serde::{Deserializer, Serializer};
@@ -24,11 +24,11 @@ mod tests {
 
     #[derive(Serialize, Deserialize, PartialEq, Debug)]
     pub struct UnparsedVote {
-        #[serde(with = "json_base64_ser")]
+        #[serde(with = "serde_base64_json")]
         pub pkey: Vec<u8>,
         pub vote: u32,
         pub timestamp: chrono::DateTime<chrono::Utc>,
-        #[serde(with = "json_base64_ser")]
+        #[serde(with = "serde_base64_json")]
         pub signature: Vec<u8>,
     }
 
