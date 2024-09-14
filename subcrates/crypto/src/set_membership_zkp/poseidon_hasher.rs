@@ -1,4 +1,4 @@
-//! Module containing a more user friendly version of the the Poseidon hash function from the halo2_gadgets crate
+//! Module containing a more user friendly version of the the Poseidon hash function from the `halo2_gadgets` crate
 //! And the Digest type for more convenient interoperability with other types.
 //!
 //! Note that reusing the Poseidon hasher from the Halo2 crate turned to be pretty hacky, due to halo2's types being
@@ -98,6 +98,7 @@ impl From<&u64> for Digest {
 ///
 /// let digest = poseidon_hasher::hash(input);
 /// ```
+#[must_use]
 pub fn hash(input: [Digest; 2]) -> Digest {
     let input = [
         Fp::from_raw(convert_u8_to_u64(input[0].0)),

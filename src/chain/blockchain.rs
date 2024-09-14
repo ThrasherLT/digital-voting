@@ -36,13 +36,13 @@ impl<T: BlockValue> Blockchain<T> {
             Some(block) => block.get_hash()?,
             None => Hash([0; 32]),
         };
-        let block = Block::new(block_value, prev_block_hash)?;
+        let block = Block::new(block_value, prev_block_hash);
         self.blocks.push(block);
         Ok(())
     }
 
-    pub fn iter(&self) -> BlockchainIter<T> {
-        BlockchainIter {
+    pub fn iter(&self) -> ChainIter<T> {
+        ChainIter {
             container: self,
             index: 0,
         }
@@ -76,12 +76,12 @@ impl<T: BlockValue> Blockchain<T> {
     }
 }
 
-pub struct BlockchainIter<'a, T> {
+pub struct ChainIter<'a, T> {
     container: &'a Blockchain<T>,
     index: usize,
 }
 
-impl<'a, T> Iterator for BlockchainIter<'a, T> {
+impl<'a, T> Iterator for ChainIter<'a, T> {
     type Item = &'a Vec<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -90,14 +90,14 @@ impl<'a, T> Iterator for BlockchainIter<'a, T> {
         }
         let block = self.container.blocks.get(self.index)?;
         self.index += 1;
-        Some(&block.block_values)
+        Some(&block.values)
     }
 }
 
 impl<T: BlockValue> Display for Blockchain<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for block in &self.blocks {
-            writeln!(f, "{}", block)?;
+            writeln!(f, "{block}")?;
         }
         Ok(())
     }
@@ -105,20 +105,21 @@ impl<T: BlockValue> Display for Blockchain<T> {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Block<T> {
-    block_values: Vec<T>,
+    values: Vec<T>,
     timestamp: Timestamp,
     prev_block_hash: Hash,
 }
 
 impl<T: BlockValue> Block<T> {
-    fn new(block_value: Vec<T>, prev_block_hash: Hash) -> Result<Self, Error> {
+    fn new(block_value: Vec<T>, prev_block_hash: Hash) -> Self {
         // TODO not sure if now is the correct timestamp to use here.
         let timestamp = chrono::Utc::now();
-        Ok(Self {
-            block_values: block_value,
+
+        Self {
+            values: block_value,
             timestamp,
             prev_block_hash,
-        })
+        }
     }
 
     fn get_hash(&self) -> Result<Hash, Error> {
@@ -137,8 +138,8 @@ impl<T: BlockValue> Display for Block<T> {
             self.get_hash().map_err(|_| std::fmt::Error)?
         )?;
         writeln!(f, "Previous block hash: {}", self.prev_block_hash)?;
-        for block_value in &self.block_values {
-            writeln!(f, "{}", block_value)?;
+        for block_value in &self.values {
+            writeln!(f, "{block_value}")?;
         }
         Ok(())
     }
@@ -158,8 +159,8 @@ impl TryFrom<digest::Digest> for Hash {
 
 impl std::fmt::Display for Hash {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for byte in self.0.iter() {
-            write!(f, "{:02x}", byte)?;
+        for byte in &self.0 {
+            write!(f, "{byte:02x}")?;
         }
         Ok(())
     }

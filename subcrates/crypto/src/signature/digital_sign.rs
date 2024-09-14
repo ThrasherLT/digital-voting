@@ -56,6 +56,7 @@ impl Signature {
     /// # Returns
     ///
     /// The signature.
+    #[must_use]
     pub fn sign(&self, message: &[u8]) -> Vec<u8> {
         self.key_pair.sign(message).as_ref().to_vec()
     }
@@ -65,6 +66,7 @@ impl Signature {
     /// # Returns
     ///
     /// The public key.
+    #[must_use]
     pub fn get_public_key(&self) -> Vec<u8> {
         let public_key = self.key_pair.public_key();
         public_key.as_ref().to_vec()
@@ -75,6 +77,10 @@ impl Signature {
     /// # Returns
     ///
     /// The signature struct containing the keypair.
+    ///
+    /// # Errors
+    ///
+    /// If Pkcs8 or key pair generation fails.
     pub fn new() -> Result<Self> {
         let rng = &ring::rand::SystemRandom::new();
         let pkcs8 = signature::Ed25519KeyPair::generate_pkcs8(rng)

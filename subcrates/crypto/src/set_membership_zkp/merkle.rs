@@ -16,9 +16,10 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 /// A struct containing all the info for Merkle Proof for a leaf in a Merkle Tree.
+#[allow(clippy::module_name_repetitions)]
 pub struct MerkleProof<H> {
     /// The index of the leaf for which the proof is generated.
-    pub _leaf_index: usize,
+    pub leaf_index: usize,
     /// The root of the Merkle Tree.
     pub root: H,
     /// The proof for the leaf.
@@ -32,11 +33,11 @@ pub struct MerkleProof<H> {
     pub path: Vec<MerkleHashPath>,
 }
 
-/// Alias to abstract away some complexity from the type of MerkleTree struct.
+/// Alias to abstract away some complexity from the type of `MerkleTree` struct.
 /// This type accepts a function which takes two hash values and hashes them together.
 type NodeHashFn<H> = Box<dyn Fn(&H, &H) -> H>;
 
-/// Alias to abstract away some complexity from the type of MerkleTree struct.
+/// Alias to abstract away some complexity from the type of `MerkleTree` struct.
 /// This type accepts a function which takes a preimage values and hashes it.
 type LeafHashFn<T, H> = Box<dyn Fn(&T) -> H>;
 
@@ -56,6 +57,7 @@ type LeafHashFn<T, H> = Box<dyn Fn(&T) -> H>;
 ///     merkle_tree: MerkleTree<u64, [u8; 32]>,
 /// }
 /// ```
+#[allow(clippy::module_name_repetitions)]
 pub struct MerkleTree<T, H> {
     /// Number of data elements from which the tree had been constructed (number of leaves).
     leaf_count: usize,
@@ -72,6 +74,7 @@ pub struct MerkleTree<T, H> {
 // TODO make sure this is according to standard.
 /// Enum representing the path to a hash in a Merkle Tree.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(clippy::module_name_repetitions)]
 pub enum MerkleHashPath {
     /// Right (or false, or zero) means that the proof element's hash value is on the right side of the current hashing operation.
     /// While the accumulated hash is on the left side.
@@ -139,7 +142,7 @@ where
     ///
     /// # Panics
     ///
-    /// If the node_hash_function or leaf_hash_function panics.
+    /// If the `node_hash_function` or `leaf_hash_function` panics.
     pub fn new(
         leaves: &[T],
         node_hash_function: NodeHashFn<H>,
@@ -220,6 +223,7 @@ where
     /// ).unwrap();
     /// let root = tree.get_root();
     /// ```
+    #[must_use]
     pub fn get_root(&self) -> H {
         self.nodes.last().unwrap().clone()
     }
@@ -260,8 +264,8 @@ where
             return Err(Error::ElementOutOfBounds(leaf_index, self.leaf_count));
         }
         let mut proof = MerkleProof {
-            _leaf_index: leaf_index,
-            root: self.nodes.last().unwrap().clone(),
+            leaf_index,
+            root: self.nodes.last().ok_or(Error::EmptyTree)?.clone(),
             proof: vec![],
             path: vec![],
         };
@@ -377,7 +381,7 @@ mod tests {
             assert_eq!(calc_path[leaf_index], proof.path);
             assert_eq!(calc_proof[leaf_index], proof.proof);
             assert_eq!(proof.root, root);
-            assert_eq!(leaf_index, proof._leaf_index);
+            assert_eq!(leaf_index, proof.leaf_index);
         }
     }
 }

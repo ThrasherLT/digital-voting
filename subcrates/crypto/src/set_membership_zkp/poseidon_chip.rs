@@ -1,9 +1,16 @@
-//! Poseidon hash function chip implementation, because the one found in halo2_gadgets can't
+//! Poseidon hash function chip implementation, because the one found in `halo2_gadgets` can't
 //! be used in a circuit without a lot of boilerplate code.
 
-use halo2_proofs::{circuit::*, pasta::Fp, plonk::*};
+use halo2_proofs::{
+    circuit::{AssignedCell, Layouter},
+    pasta::Fp,
+    plonk::{Advice, Column, ConstraintSystem, Error, Instance},
+};
 
-use halo2_gadgets::poseidon::{primitives::*, Hash, Pow5Chip, Pow5Config};
+use halo2_gadgets::poseidon::{
+    primitives::{ConstantLength, Spec},
+    Hash, Pow5Chip, Pow5Config,
+};
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -27,14 +34,14 @@ pub struct PoseidonConfig<const WIDTH: usize, const RATE: usize, const L: usize>
     /// The expected output column for the Poseidon hash function.
     _expected: Column<Instance>,
     /// The configuration for the Poseidon hash function.
-    poseidon_config: Pow5Config<Fp, WIDTH, RATE>,
+    config: Pow5Config<Fp, WIDTH, RATE>,
 }
 
 impl<S, const WIDTH: usize, const RATE: usize, const L: usize> PoseidonChip<S, WIDTH, RATE, L>
 where
     S: Spec<Fp, WIDTH, RATE>,
 {
-    /// Create a new PoseidonChip with the given configuration.
+    /// Create a new `PoseidonChip` with the given configuration.
     ///
     /// # Arguments
     ///
@@ -69,7 +76,7 @@ where
         PoseidonConfig {
             inputs: state[..RATE].try_into().unwrap(),
             _expected: expected,
-            poseidon_config: Pow5Chip::configure::<S>(
+            config: Pow5Chip::configure::<S>(
                 meta,
                 state.try_into().unwrap(),
                 partial_sbox,
@@ -90,7 +97,7 @@ where
         layouter: &mut impl Layouter<Fp>,
         message_words: &[AssignedCell<Fp, Fp>; L],
     ) -> Result<AssignedCell<Fp, Fp>, Error> {
-        let chip = Pow5Chip::construct(self.config.poseidon_config.clone());
+        let chip = Pow5Chip::construct(self.config.config.clone());
 
         let message = layouter.assign_region(
             || "load message words",
@@ -100,7 +107,7 @@ where
                     .enumerate()
                     .map(|(i, word)| {
                         word.copy_advice(
-                            || format!("word {}", i),
+                            || format!("word {i}"),
                             &mut region,
                             self.config.inputs[i],
                             0,

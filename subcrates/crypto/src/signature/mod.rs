@@ -2,5 +2,5 @@
 
 #![deny(missing_docs)]
 
-pub mod blind_signature;
-pub mod digital_signature;
+pub mod blind_sign;
+pub mod digital_sign;

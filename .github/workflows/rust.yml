@@ -166,7 +166,8 @@ jobs:
         key: ${{ matrix.target }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}  
 
     - name: Lint with Clippy
-      run: cargo clippy -- -D warnings --target ${{ matrix.target }}
+      # Enabling all and pedantic since they seem to produce good results even if sometimes annoying.
+      run: cargo clippy -- -D warnings --target ${{ matrix.target }} -W clippy::all -W clippy::pedantic
 
 
   dependencies:

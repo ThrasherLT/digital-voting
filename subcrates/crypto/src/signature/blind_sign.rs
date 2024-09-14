@@ -1,12 +1,12 @@
 //! Blind signature for allowing the user to send his personal data to a signer, get a signature
 //! then use it as authentication in the blockchain without the signer being able to link the
 //! user with the signature.
-//! Also acts as a wrapper around the blind_rsa_signatures crate.
+//! Also acts as a wrapper around the `blind_rsa_signatures` crate.
 
-// TODO blind_rsa_signatures uses the rsa crate which is vulnerable to the Marvin attack, but
-// the blind_rsa_signatures crate uses pss padding, so in theory the vulnerability should be mitigated,
+// TODO `blind_rsa_signatures` uses the rsa crate which is vulnerable to the Marvin attack, but
+// the `blind_rsa_signatures` crate uses pss padding, so in theory the vulnerability should be mitigated,
 // but proper tests should still be done.
-// Also the blind_rsa_signatures crate has a message_randomizer feature which does not seem useful
+// Also the `blind_rsa_signatures` crate has a message_randomizer feature which does not seem useful
 // but should still be investigated if not using it opens us up to vulnerabilities.
 
 use std::str::FromStr;
@@ -164,7 +164,7 @@ impl BlindSigner {
     /// # Errors
     ///
     /// If the signing fails, an error is returned.
-    pub fn bling_sign(&self, blinded_msg: BlindedMessage) -> Result<BlindSignature> {
+    pub fn bling_sign(&self, blinded_msg: &BlindedMessage) -> Result<BlindSignature> {
         let rng = &mut rand::thread_rng();
         let blind_sig = self.sk.blind_sign(rng, &blinded_msg.0, &self.options)?;
 
@@ -214,6 +214,10 @@ impl Verifier {
     ///
     /// If the signature is valid, `Ok(())` is returned.
     /// If the signature is invalid, an error is returned.
+    ///
+    /// # Errors
+    ///
+    /// If signature is forged or invalid.
     pub fn verify_signature(&self, signature: Signature, msg: &[u8]) -> Result<()> {
         let sig = blind_rsa_signatures::Signature::from(signature);
         sig.verify(&self.pk, None, msg, &self.options)?;
@@ -348,7 +352,7 @@ mod tests {
         assert_ne!(msg, blind_msg.0.as_slice());
 
         // Signer:
-        let blind_signature = blind_signer.bling_sign(blind_msg.clone()).unwrap();
+        let blind_signature = blind_signer.bling_sign(&blind_msg).unwrap();
 
         // User:
         let signature = unblinder

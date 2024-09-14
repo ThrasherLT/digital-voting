@@ -14,7 +14,7 @@ pub enum Error {
 }
 type Result<T> = std::result::Result<T, Error>;
 
-pub async fn run_server(addr: SocketAddr) -> Result<()> {
+pub async fn run(addr: SocketAddr) -> Result<()> {
     println!("starting HTTP server at http://localhost:8080");
 
     HttpServer::new(|| {

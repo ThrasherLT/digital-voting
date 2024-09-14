@@ -6,7 +6,7 @@
 use std::borrow::Cow::{self, Borrowed, Owned};
 
 use clap::Parser;
-use crypto::signature::blind_signature;
+use crypto::signature::blind_sign;
 use rustyline::{
     completion::FilenameCompleter,
     error::ReadlineError,
@@ -36,7 +36,7 @@ pub struct Args {
     pub socket_addr: std::net::SocketAddr,
     /// The public key of the election authority used to verify that the voters are eligible.
     #[clap(short = 'p', long = "authority-public-key")]
-    pub authority_pk: blind_signature::Publickey,
+    pub authority_pk: blind_sign::Publickey,
     /// The command to execute. See `Cmd` for more details.
     #[clap(subcommand)]
     pub cmd: Cmd,
@@ -56,7 +56,7 @@ pub enum Cmd {
     },
 }
 
-/// StdioReader reads lines from stdio.
+/// `StdioReader` reads lines from stdio.
 /// It also manages the command history so should only be dropped
 /// when the application exits.
 pub struct StdioReader {
@@ -65,11 +65,11 @@ pub struct StdioReader {
 }
 
 impl StdioReader {
-    /// Create a new StdioReader.
+    /// Create a new `StdioReader`.
     ///
     /// # Returns
     ///
-    /// A new StdioReader.
+    /// A new `StdioReader`.
     ///
     /// # Errors
     ///
@@ -84,7 +84,7 @@ impl StdioReader {
             completer: FilenameCompleter::new(),
             highlighter: MatchingBracketHighlighter::new(),
             hinter: HistoryHinter::new(),
-            colored_prompt: "".to_owned(),
+            colored_prompt: String::new(),
             validator: MatchingBracketValidator::new(),
         };
         let mut rl = Editor::with_config(config)?;
@@ -100,6 +100,10 @@ impl StdioReader {
     ///
     /// The line read from stdio.
     ///
+    /// # Panics
+    ///
+    /// If the helper struct isn't set, but that shouldn't happen.
+    ///
     /// # Errors
     ///
     /// If there was an error reading from stdio.
@@ -114,8 +118,8 @@ impl StdioReader {
 }
 
 impl Drop for StdioReader {
-    /// The command history is saved to a file when the StdioReader is dropped.
-    /// So StdioReader should only really be dropped when the program is exiting.
+    /// The command history is saved to a file when the `StdioReader` is dropped.
+    /// So `StdioReader` should only really be dropped when the program is exiting.
     fn drop(&mut self) {
         let _ = self.rl.save_history("node-cmd-history.txt");
     }

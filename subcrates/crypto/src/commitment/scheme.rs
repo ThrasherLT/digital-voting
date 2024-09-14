@@ -22,6 +22,7 @@ pub struct Commitment(Vec<u8>);
 type CommitmentFn<V, N, H> = Box<dyn Fn(&V, &N) -> H>;
 
 /// A commitment scheme based on a the provided commitment function.
+#[allow(clippy::module_name_repetitions)]
 pub struct HashCommitmentScheme<V, N, H> {
     commitment_fn: CommitmentFn<V, N, H>,
 }
@@ -31,6 +32,7 @@ where
     H: AsRef<[u8]>,
 {
     /// Create a new commitment scheme from the provided commitment function.
+    #[must_use]
     pub fn new(hash_fn: CommitmentFn<V, N, H>) -> Self {
         Self {
             commitment_fn: hash_fn,
@@ -44,6 +46,10 @@ where
     }
 
     /// Verify a commitment.
+    ///
+    /// # Errors
+    ///
+    /// If commitment is forged or corrupted.
     pub fn verify(&self, value: &V, nonce: &N, commitment: &Commitment) -> Result<()> {
         let hash = (self.commitment_fn)(value, nonce);
         if hash.as_ref() == commitment.0.as_slice() {
