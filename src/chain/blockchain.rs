@@ -97,7 +97,7 @@ impl<'a, T> Iterator for BlockchainIter<'a, T> {
 impl<T: BlockValue> Display for Blockchain<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for block in &self.blocks {
-            writeln!(f, "{}", block)?;
+            writeln!(f, "{block}")?;
         }
         Ok(())
     }
@@ -138,7 +138,7 @@ impl<T: BlockValue> Display for Block<T> {
         )?;
         writeln!(f, "Previous block hash: {}", self.prev_block_hash)?;
         for block_value in &self.block_values {
-            writeln!(f, "{}", block_value)?;
+            writeln!(f, "{block_value}")?;
         }
         Ok(())
     }
@@ -158,8 +158,8 @@ impl TryFrom<digest::Digest> for Hash {
 
 impl std::fmt::Display for Hash {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for byte in self.0.iter() {
-            write!(f, "{:02x}", byte)?;
+        for byte in &self.0 {
+            write!(f, "{byte:02x}")?;
         }
         Ok(())
     }

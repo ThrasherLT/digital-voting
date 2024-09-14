@@ -5,7 +5,7 @@ use tracing_appender::non_blocking::WorkerGuard as TracingWorkerGuard;
 pub fn start_logger(log_filename: &str) -> std::io::Result<TracingWorkerGuard> {
     // Set up a rolling file appender
     std::fs::create_dir_all("logs")?;
-    let log_file = std::fs::File::create(format!("logs/{}", log_filename))?;
+    let log_file = std::fs::File::create(format!("logs/{log_filename}"))?;
     // Do not let _tracing_worker_guard go out of scope, or the logging thread will be terminated.
     let (non_blocking_tracing_writer, tracing_worker_guard) =
         tracing_appender::non_blocking(log_file);
@@ -21,7 +21,7 @@ pub fn start_logger(log_filename: &str) -> std::io::Result<TracingWorkerGuard> {
         .map_err(|e| {
             std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to initialize logger {}", e),
+                format!("Failed to initialize logger {e}"),
             )
         })?;
 

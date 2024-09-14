@@ -31,6 +31,7 @@ pub struct Vote {
 }
 
 impl Vote {
+    #[must_use]
     pub fn new(voter_pkey: u64, candidate_id: u64, timestamp: Timestamp) -> Self {
         Self {
             voter_pkey,
@@ -60,6 +61,7 @@ pub struct VotingSystem {
 }
 
 impl VotingSystem {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             blockchain: Blockchain::new(),
@@ -83,10 +85,10 @@ impl VotingSystem {
         let mut tally = HashMap::new();
 
         self.blockchain.iter().for_each(|values| {
-            values.iter().for_each(|vote| {
+            for vote in values {
                 let count = tally.entry(vote.candidate_id).or_insert(0);
                 *count += 1;
-            });
+            }
         });
         Ok(Tally(tally))
     }
@@ -120,7 +122,7 @@ pub struct Tally(HashMap<u64, u64>);
 impl Display for Tally {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for (candidate_id, count) in &self.0 {
-            writeln!(f, "Candidate {} has {} votes", candidate_id, count)?;
+            writeln!(f, "Candidate {candidate_id} has {count} votes")?;
         }
         Ok(())
     }

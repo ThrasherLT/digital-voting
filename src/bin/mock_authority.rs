@@ -67,7 +67,7 @@ pub async fn verify(
             Ok(blind_signature) => {
                 HttpResponse::Ok().json(VerificationResponse::Verified { blind_signature })
             }
-            Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+            Err(e) => HttpResponse::InternalServerError().body(format!("Error: {e}")),
         }
     } else {
         HttpResponse::BadRequest().json(VerificationResponse::Denied)
@@ -78,7 +78,7 @@ pub async fn verify(
 pub async fn get_pkey(data: web::Data<AppState>) -> impl Responder {
     match data.blind_signer.get_public_key() {
         Ok(pkey) => HttpResponse::Ok().json(pkey),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {e}")),
     }
 }
 

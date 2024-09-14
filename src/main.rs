@@ -9,7 +9,7 @@ use digital_voting::{
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
-    println!("Args: {:?}", args);
+    println!("Args: {args:?}");
     let _tracing_worker_guard = start_logger("digital_voting.log")?;
 
     tokio::task::spawn_blocking(|| {
@@ -18,11 +18,11 @@ async fn main() -> Result<()> {
             let line = match stdio_reader.read_stdio_blocking() {
                 Ok(line) => line,
                 Err(e) => {
-                    println!("Quitting: {:?}, send interrupt again to kill the server", e);
+                    println!("Quitting: {e:?}, send interrupt again to kill the server");
                     break;
                 }
             };
-            println!("Read line: {:?}", line);
+            println!("Read line: {line:?}");
         }
     });
 

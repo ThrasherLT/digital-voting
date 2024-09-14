@@ -26,7 +26,7 @@ pub struct Batcher<T> {
     /// Variable to track when the next batch should be returned.
     next_batch_time: Timestamp,
     /// Notify instance to notify the batcher that the batch is full and ready to be
-    /// returned without waiting for the batch_time_interval.
+    /// returned without waiting for the `batch_time_interval`.
     batch_ready_notify: Arc<Notify>,
     /// Receiver into which the items will be sent to be batched.
     rx: Receiver<T>,
@@ -54,6 +54,7 @@ impl<T> Batcher<T> {
     ///
     /// let (mut batcher, tx): (Batcher<u32>, Sender<u32>) = Batcher::new(3, Duration::from_secs(1));
     /// ```
+    #[must_use]
     pub fn new(batch_size: usize, batch_time_interval: Duration) -> (Self, Sender<T>) {
         let (tx, rx) = mpsc::channel(5);
         let now = Utc::now();
@@ -106,10 +107,10 @@ impl<T> Batcher<T> {
                 }
                 Ok(time_remaining) => {
                     tokio::select! {
-                        _ = tokio::time::sleep(time_remaining) => {
+                        () = tokio::time::sleep(time_remaining) => {
                             return self.flush();
                         }
-                        _ = self.batch_ready_notify.notified() => {
+                        () = self.batch_ready_notify.notified() => {
                             return self.flush();
                         }
                         // TODO might need to wait for tx permit here to prevent deadlock.
