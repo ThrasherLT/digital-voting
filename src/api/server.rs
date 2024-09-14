@@ -4,17 +4,15 @@ use actix_web::{post, routes, web, App, HttpServer, Responder};
 use tracing::info;
 use tracing_actix_web::TracingLogger;
 
-use thiserror::Error;
-
 use super::protocol::UnparsedVote;
-
-type Result<T> = std::result::Result<T, Error>;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Actix error: {0}")]
     ActixError(#[from] std::io::Error),
 }
+type Result<T> = std::result::Result<T, Error>;
 
 pub async fn run_server(addr: SocketAddr) -> Result<()> {
     println!("starting HTTP server at http://localhost:8080");
