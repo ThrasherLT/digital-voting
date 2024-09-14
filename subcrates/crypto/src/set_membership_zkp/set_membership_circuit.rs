@@ -1,11 +1,16 @@
-//! This module contains the implementation of the SetMembershipCircuit struct, which is a
+//! This module contains the implementation of the `SetMembershipCircuit` struct, which is a
 //! circuit that proves that a given leaf is a member of a Merkle tree.
 //! The circuit uses the Poseidon hash function to hash the leaf and the Merkle proof elements.
 //! Poseidon hash function is used instead of sha256, because it's a lot faster in ZKP circuits
 //! and because halo2's support for sha256 is very limited.
 
 use halo2_gadgets::poseidon::primitives::P128Pow5T3;
-use halo2_proofs::{circuit::*, pasta::Fp, plonk::*, poly::Rotation};
+use halo2_proofs::{
+    circuit::{Layouter, SimpleFloorPlanner, Value},
+    pasta::Fp,
+    plonk::{Advice, Circuit, Column, Error, Expression, Instance, Selector},
+    poly::Rotation,
+};
 
 use super::poseidon_chip::{PoseidonChip, PoseidonConfig};
 
@@ -21,10 +26,10 @@ pub struct SetMembershipCircuit {
     direction: Vec<Value<Fp>>,
 }
 
-/// Configuration for the SetMembershipCircuit.
+/// Configuration for the `SetMembershipCircuit`.
 #[derive(Debug, Clone)]
 pub struct SetMembershipConfig {
-    /// The advice columns for the SetMembershipCircuit.
+    /// The advice columns for the `SetMembershipCircuit`.
     advices: [Column<Advice>; 3],
     /// Selector for enforcing boolean values.
     bool_selector: Selector,
@@ -37,7 +42,7 @@ pub struct SetMembershipConfig {
 }
 
 impl SetMembershipCircuit {
-    /// Create a new SetMembershipCircuit with the given leaf value, Merkle proof elements and directions.
+    /// Create a new `SetMembershipCircuit` with the given leaf value, Merkle proof elements and directions.
     ///
     /// # Arguments
     ///
@@ -47,7 +52,7 @@ impl SetMembershipCircuit {
     ///
     /// # Returns
     ///
-    /// A new SetMembershipCircuit instance.
+    /// A new `SetMembershipCircuit` instance.
     ///
     /// # Example
     ///
@@ -66,6 +71,7 @@ impl SetMembershipCircuit {
     /// ];
     /// let circuit = SetMembershipCircuit::new(value, merkle_proof, direction);
     /// ```
+    #[must_use]
     pub fn new(value: Value<Fp>, merkle_proof: Vec<Value<Fp>>, direction: Vec<Value<Fp>>) -> Self {
         Self {
             value,
@@ -77,7 +83,7 @@ impl SetMembershipCircuit {
     /// Function containing most of the proving logic for set membership.
     fn prove(
         &self,
-        config: SetMembershipConfig,
+        config: &SetMembershipConfig,
         mut layouter: impl Layouter<Fp>,
     ) -> Result<(), Error> {
         let mut digest = layouter.assign_region(
@@ -111,7 +117,7 @@ impl SetMembershipCircuit {
 
                     config.bool_selector.enable(&mut region, 0)?;
                     config.swap_selector.enable(&mut region, 0)?;
-                    let digest_owned_value = digest.value().map(|x| x.to_owned());
+                    let digest_owned_value = digest.value().map(ToOwned::to_owned);
                     let (mut lhs, mut rhs) = (digest_owned_value, self.merkle_proof[i]);
                     self.direction[i].map(|direction| {
                         if direction == Fp::one() {
@@ -204,7 +210,7 @@ impl Circuit<Fp> for SetMembershipCircuit {
         config: Self::Config,
         layouter: impl halo2_proofs::circuit::Layouter<Fp>,
     ) -> Result<(), halo2_proofs::plonk::Error> {
-        self.prove(config, layouter)?;
+        self.prove(&config, layouter)?;
         Ok(())
     }
 }

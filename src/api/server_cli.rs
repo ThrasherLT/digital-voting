@@ -6,7 +6,7 @@
 use std::borrow::Cow::{self, Borrowed, Owned};
 
 use clap::Parser;
-use crypto::signature::blind_signature;
+use crypto::signature::blind_sign;
 use rustyline::{
     completion::FilenameCompleter,
     error::ReadlineError,
@@ -36,7 +36,7 @@ pub struct Args {
     pub socket_addr: std::net::SocketAddr,
     /// The public key of the election authority used to verify that the voters are eligible.
     #[clap(short = 'p', long = "authority-public-key")]
-    pub authority_pk: blind_signature::Publickey,
+    pub authority_pk: blind_sign::Publickey,
     /// The command to execute. See `Cmd` for more details.
     #[clap(subcommand)]
     pub cmd: Cmd,

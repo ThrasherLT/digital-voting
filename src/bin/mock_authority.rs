@@ -6,7 +6,7 @@
 use actix_web::{get, post, routes, web, App, HttpResponse, HttpServer, Responder};
 use anyhow::Result;
 use clap::Parser;
-use crypto::signature::blind_signature::{BlindSignature, BlindSigner, BlindedMessage};
+use crypto::signature::blind_sign::{BlindSignature, BlindSigner, BlindedMessage};
 use digital_voting::json_base64::serde_base64_json;
 use digital_voting::logging::start_logger;
 use digital_voting::Timestamp;
@@ -62,7 +62,7 @@ pub async fn verify(
     if mock_verify_authentication_data(verification_request.authentication_data.as_str()) {
         match data
             .blind_signer
-            .bling_sign(BlindedMessage(verification_request.pkey.clone()))
+            .bling_sign(&BlindedMessage(verification_request.pkey.clone()))
         {
             Ok(blind_signature) => {
                 HttpResponse::Ok().json(VerificationResponse::Verified { blind_signature })

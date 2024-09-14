@@ -47,7 +47,7 @@ type Result<T> = std::result::Result<T, Error>;
 /// issue than verification speed.
 /// This struct should be passed around as reference, since it is large and expensive to generate.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SetMembershipParams {
+pub struct MembershipParams {
     /// Parameters used to generate and verify the proof.
     #[serde(with = "halo2_params")]
     inner: Params<EqAffine>,
@@ -57,9 +57,13 @@ pub struct SetMembershipParams {
 pub mod halo2_params {
     use serde::{Deserializer, Serializer};
 
-    use super::*;
+    use super::{Deserialize, EqAffine, Params};
 
     /// Serializing Halo2 parameters to bytes and then passing it to Serde serializer.
+    ///
+    /// # Errors
+    ///
+    /// If writing the bytes to the buffer fails.
     pub fn serialize<S>(
         inner: &Params<EqAffine>,
         serializer: S,
@@ -75,6 +79,10 @@ pub mod halo2_params {
     }
 
     /// Deserializing Halo2 parameters from serde dedserializer to bytes and reading it to actual params.
+    ///
+    /// # Errors
+    ///
+    /// If the input data is invalid.
     pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<Params<EqAffine>, D::Error>
     where
         D: Deserializer<'de>,
@@ -93,16 +101,21 @@ pub mod halo2_params {
 }
 
 // TODO figure out if any of these functions will block.
-impl SetMembershipParams {
+impl MembershipParams {
     /// Creates a new instance of the parameters.
     /// The value of k is hardcoded here to be 10, since that's what works with the underlying Halo2 circuit.
     /// Theoretically this function should only be called once, the resulting struct stored
     /// and passed around as reference, because the params are both expensive to generate and large.
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Serialize the parameters to a writer as bytes.
+    ///
+    /// # Errors
+    ///
+    /// If writing the membership params to the buffer fails.
     pub fn write<W: std::io::Write>(&self, buf: &mut W) -> Result<()> {
         self.inner.write(buf)?;
 
@@ -110,18 +123,23 @@ impl SetMembershipParams {
     }
 
     /// Deserialize the parameters from bytes from a reader.
+    ///
+    /// # Errors
+    ///
+    /// If parameters could not be read from the input buffer.
     pub fn read<R: std::io::Read>(buf: &mut R) -> Result<Self> {
         let inner = Params::read(buf)?;
         Ok(Self { inner })
     }
 
     /// Get the inner parameters.
+    #[must_use]
     pub fn get_inner(&self) -> &Params<EqAffine> {
         &self.inner
     }
 }
 
-impl Default for SetMembershipParams {
+impl Default for MembershipParams {
     /// Default implementation for params with k = 10.
     fn default() -> Self {
         // The value of k is specific for the circuit, so it is hardcoded here.
@@ -135,20 +153,20 @@ impl Default for SetMembershipParams {
 
 /// All required info to prove that a given element is a member of the set.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SetMembershipProof {
+pub struct Proof {
     /// Verification key used to verify the proof.
     vk: Vec<u8>,
     /// The actual proof that the element is a member of the set in bytes.
     proof: Vec<u8>,
 }
 
-impl SetMembershipProof {
+impl Proof {
     /// Proves that the element at the given index is a member of the set.
     /// Merkle tree and set are passed by reference to avoid large memory usage
     ///
     /// # Note
     ///
-    /// This function is blocking, so use .spawn_blocking() ir it's equivalent,
+    /// This function is blocking, so use `.spawn_blocking()` ir it's equivalent,
     /// if you want to run it in an async context.
     ///
     /// # Arguments
@@ -169,9 +187,9 @@ impl SetMembershipProof {
     ///
     /// ```
     /// use crypto::set_membership_zkp::poseidon_hasher::{self, Digest};
-    /// use crypto::set_membership_zkp::set_membership::SetMembershipProof;
+    /// use crypto::set_membership_zkp::set_membership::Proof;
     /// use crypto::set_membership_zkp::merkle::MerkleTree;
-    /// use crypto::set_membership_zkp::set_membership::SetMembershipParams;
+    /// use crypto::set_membership_zkp::set_membership::MembershipParams;
     ///
     /// let set = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     /// let merkle_tree = MerkleTree::<u64, [u8; 32]>::new(
@@ -179,15 +197,15 @@ impl SetMembershipProof {
     ///     Box::new(|a, b| poseidon_hasher::hash([Digest(*a), Digest(*b)]).0),
     ///     Box::new(|x| poseidon_hasher::hash([x.into(), x.into()]).0),
     /// ).unwrap();
-    /// let params = SetMembershipParams::new();
-    /// let set_membership_proof = SetMembershipProof::new_blocking(5, &set, &merkle_tree, &params).unwrap();
+    /// let params = MembershipParams::new();
+    /// let set_membership_proof = Proof::new_blocking(5, &set, &merkle_tree, &params).unwrap();
     /// ```
     pub fn new_blocking(
         index: usize,
         set: &[u64],
         merkle_tree: &MerkleTree<u64, [u8; 32]>,
-        params: &SetMembershipParams,
-    ) -> Result<SetMembershipProof> {
+        params: &MembershipParams,
+    ) -> Result<Proof> {
         let MerkleProof { proof, path, .. } = merkle_tree.get_proof(index)?;
 
         let value = Value::known(
@@ -225,14 +243,14 @@ impl SetMembershipProof {
         let vk = vk.to_bytes();
         debug!("Set membership ZKP proof and VK created for item {index}");
 
-        Ok(SetMembershipProof { vk, proof })
+        Ok(Proof { vk, proof })
     }
 
     /// Verifies the proof that the unknown element is a member of the set.
     ///
     /// # Note
     ///
-    /// This function is blocking, so use .spawn_blocking() ir it's equivalent,
+    /// This function is blocking, so use `.spawn_blocking()` ir it's equivalent,
     /// if you want to run it in an async context.
     ///
     /// # Arguments
@@ -251,9 +269,9 @@ impl SetMembershipProof {
     ///
     /// ```
     /// use crypto::set_membership_zkp::poseidon_hasher::{self, Digest};
-    /// use crypto::set_membership_zkp::set_membership::SetMembershipProof;
+    /// use crypto::set_membership_zkp::set_membership::Proof;
     /// use crypto::set_membership_zkp::merkle::MerkleTree;
-    /// use crypto::set_membership_zkp::set_membership::SetMembershipParams;
+    /// use crypto::set_membership_zkp::set_membership::MembershipParams;
     ///
     /// let set = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     /// let merkle_tree = MerkleTree::<u64, [u8; 32]>::new(
@@ -261,20 +279,15 @@ impl SetMembershipProof {
     ///     Box::new(|a, b| poseidon_hasher::hash([Digest(*a), Digest(*b)]).0),
     ///     Box::new(|x| poseidon_hasher::hash([x.into(), x.into()]).0),
     /// ).unwrap();
-    /// let params = SetMembershipParams::new();
-    /// let set_membership_proof = SetMembershipProof::new_blocking(5, &set, &merkle_tree, &params).unwrap();
+    /// let params = MembershipParams::new();
+    /// let set_membership_proof = Proof::new_blocking(5, &set, &merkle_tree, &params).unwrap();
     /// set_membership_proof.verify_blocking(merkle_tree.get_root(), &params).unwrap();
     /// ```
-    pub fn verify_blocking(
-        &self,
-        merkle_root: [u8; 32],
-        params: &SetMembershipParams,
-    ) -> Result<()> {
+    pub fn verify_blocking(&self, merkle_root: [u8; 32], params: &MembershipParams) -> Result<()> {
         let vk = VerifyingKey::<EqAffine>::from_bytes::<SetMembershipCircuit>(
             &self.vk,
             params.get_inner(),
-        )
-        .unwrap();
+        )?;
         let mut transcript =
             Blake2bRead::<_, _, Challenge255<_>>::init(std::io::Cursor::new(&self.proof));
         let root = Fp::from_raw(convert_u8_to_u64(merkle_root));
@@ -302,7 +315,7 @@ mod tests {
     #[wasm_bindgen_test]
     #[test]
     fn test_prove_and_verify() {
-        let params = SetMembershipParams::new();
+        let params = MembershipParams::new();
         let set = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
         let merkle_tree = MerkleTree::<u64, [u8; 32]>::new(
             &set,
@@ -312,8 +325,7 @@ mod tests {
         .unwrap();
         let merkle_root = merkle_tree.get_root();
 
-        let set_membership_proof =
-            SetMembershipProof::new_blocking(5, &set, &merkle_tree, &params).unwrap();
+        let set_membership_proof = Proof::new_blocking(5, &set, &merkle_tree, &params).unwrap();
         let mut test_buf = Vec::new();
         params.write(&mut test_buf).unwrap();
 
