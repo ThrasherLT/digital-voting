@@ -36,7 +36,7 @@ pub struct Args {
     pub socket_addr: std::net::SocketAddr,
     /// The public key of the election authority used to verify that the voters are eligible.
     #[clap(short = 'p', long = "authority-public-key")]
-    pub authority_pk: blind_sign::Publickey,
+    pub authority_pk: blind_sign::PublicKey,
     /// The command to execute. See `Cmd` for more details.
     #[clap(subcommand)]
     pub cmd: Cmd,

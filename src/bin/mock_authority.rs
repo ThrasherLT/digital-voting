@@ -7,7 +7,6 @@ use actix_web::{get, post, routes, web, App, HttpResponse, HttpServer, Responder
 use anyhow::Result;
 use clap::Parser;
 use crypto::signature::blind_sign::{BlindSignature, BlindSigner, BlindedMessage};
-use digital_voting::json_base64::serde_base64_json;
 use digital_voting::logging::start_logger;
 use digital_voting::Timestamp;
 use serde::{self, Deserialize, Serialize};
@@ -62,7 +61,7 @@ pub async fn verify(
     if mock_verify_authentication_data(verification_request.authentication_data.as_str()) {
         match data
             .blind_signer
-            .bling_sign(&BlindedMessage(verification_request.pkey.clone()))
+            .bling_sign(&verification_request.pkey.clone())
         {
             Ok(blind_signature) => {
                 HttpResponse::Ok().json(VerificationResponse::Verified { blind_signature })
@@ -84,11 +83,9 @@ pub async fn get_pkey(data: web::Data<AppState>) -> impl Responder {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct VerificationRequest {
-    #[serde(with = "serde_base64_json")]
-    pkey: Vec<u8>,
+    pkey: BlindedMessage,
     authentication_data: String,
     timestamp: Timestamp,
-    #[serde(with = "serde_base64_json")]
     signature: Vec<u8>,
 }
 

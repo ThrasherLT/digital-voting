@@ -14,7 +14,11 @@ use std::str::FromStr;
 use base64::prelude::*;
 use blind_rsa_signatures::{self, KeyPair, Options};
 use serde::{Deserialize, Serialize};
+use serde_with::base64::Base64;
+use serde_with::serde_as;
 use thiserror::Error;
+use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::JsValue;
 
 /// Errors that can occur when working with blind signatures.
 #[derive(Error, Debug)]
@@ -32,41 +36,74 @@ pub enum Error {
 }
 type Result<T> = std::result::Result<T, Error>;
 
+// Custom impl to make `ThisError::Error` seamelessly compatible with wasm.
+impl From<Error> for wasm_bindgen::JsValue {
+    fn from(value: Error) -> Self {
+        value.to_string().into()
+    }
+}
+
 // The following few structs are thin wrappers around the types from the blind signature crate.
 // So if in the future we needed to use a different crate, it wouldn't be tedious to swap out.
 
 /// A public key for blind signatures.
 /// Wrapper around the public key from the blind signature crate.
+#[wasm_bindgen]
+#[serde_as]
+// TODO Look into this:
+#[allow(clippy::unsafe_derive_deserialize)]
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct Publickey(pub Vec<u8>);
+pub struct PublicKey(#[serde_as(as = "Base64")] Vec<u8>);
 
-impl TryFrom<Publickey> for blind_rsa_signatures::PublicKey {
+#[wasm_bindgen]
+impl PublicKey {
+    /// WASM specific string conversion for displaying as string.
+    #[must_use]
+    pub fn to_wasm_string(&self) -> JsValue {
+        BASE64_STANDARD.encode(&self.0).into()
+    }
+}
+
+impl TryFrom<PublicKey> for blind_rsa_signatures::PublicKey {
     type Error = Error;
 
-    fn try_from(pk: Publickey) -> Result<blind_rsa_signatures::PublicKey> {
+    fn try_from(pk: PublicKey) -> Result<blind_rsa_signatures::PublicKey> {
         blind_rsa_signatures::PublicKey::from_der(&pk.0).map_err(Error::from)
     }
 }
 
-impl std::fmt::Display for Publickey {
+impl std::fmt::Display for PublicKey {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", BASE64_STANDARD.encode(&self.0))
     }
 }
 
-impl FromStr for Publickey {
+impl FromStr for PublicKey {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
         let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
-        Ok(Publickey(bytes))
+        Ok(PublicKey(bytes))
     }
 }
 
 /// A blind signature.
 /// Wrapper around the blind signature from the blind signature crate.
+#[wasm_bindgen]
+#[serde_as]
+// TODO Look into this:
+#[allow(clippy::unsafe_derive_deserialize)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BlindSignature(pub Vec<u8>);
+pub struct BlindSignature(#[serde_as(as = "Base64")] Vec<u8>);
+
+#[wasm_bindgen]
+impl BlindSignature {
+    /// WASM specific string conversion for displaying as string.
+    #[must_use]
+    pub fn to_wasm_string(&self) -> JsValue {
+        BASE64_STANDARD.encode(&self.0).into()
+    }
+}
 
 impl From<blind_rsa_signatures::BlindSignature> for BlindSignature {
     fn from(blind_signature: blind_rsa_signatures::BlindSignature) -> BlindSignature {
@@ -80,10 +117,38 @@ impl From<BlindSignature> for blind_rsa_signatures::BlindSignature {
     }
 }
 
+impl std::fmt::Display for BlindSignature {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
+    }
+}
+
+impl FromStr for BlindSignature {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
+        Ok(BlindSignature(bytes))
+    }
+}
+
 /// An unblinded signature.
 /// Wrapper around the unblinded signature from the blind signature crate.
+#[wasm_bindgen]
+#[serde_as]
+// TODO Look into this:
+#[allow(clippy::unsafe_derive_deserialize)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Signature(pub Vec<u8>);
+pub struct Signature(#[serde_as(as = "Base64")] Vec<u8>);
+
+#[wasm_bindgen]
+impl Signature {
+    /// WASM specific string conversion for displaying as string.
+    #[must_use]
+    pub fn to_wasm_string(&self) -> JsValue {
+        BASE64_STANDARD.encode(&self.0).into()
+    }
+}
 
 impl From<Signature> for blind_rsa_signatures::Signature {
     fn from(signature: Signature) -> blind_rsa_signatures::Signature {
@@ -97,10 +162,27 @@ impl From<blind_rsa_signatures::Signature> for Signature {
     }
 }
 
+impl std::fmt::Display for Signature {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
+    }
+}
+
+impl FromStr for Signature {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
+        Ok(Signature(bytes))
+    }
+}
+
 /// A blinded message.
 /// Wrapper around the blinded message from the blind signature crate.
+#[wasm_bindgen]
+#[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BlindedMessage(pub Vec<u8>);
+pub struct BlindedMessage(#[serde_as(as = "Base64")] Vec<u8>);
 
 impl From<blind_rsa_signatures::BlindedMessage> for BlindedMessage {
     fn from(blinded_message: blind_rsa_signatures::BlindedMessage) -> BlindedMessage {
@@ -108,6 +190,7 @@ impl From<blind_rsa_signatures::BlindedMessage> for BlindedMessage {
     }
 }
 
+// TODO Could consider implementing UNIFFI for this struct in the future.
 /// The signer for blindly signing messages.
 pub struct BlindSigner {
     /// The public key of the signer. This is sent to both the user and the verifier
@@ -147,8 +230,8 @@ impl BlindSigner {
     /// # Errors
     ///
     /// If the public key cannot be serialized to DER format, an error is returned.
-    pub fn get_public_key(&self) -> Result<Publickey> {
-        Ok(Publickey(self.pk.to_der()?))
+    pub fn get_public_key(&self) -> Result<PublicKey> {
+        Ok(PublicKey(self.pk.to_der()?))
     }
 
     /// Blindly sign a message.
@@ -194,7 +277,7 @@ impl Verifier {
     /// # Errors
     ///
     /// If the public key is invalid, an error is returned.
-    pub fn new(pk: Publickey) -> Result<Self> {
+    pub fn new(pk: PublicKey) -> Result<Self> {
         // Since we're not supporting message randomizer, hardcoding default options for now.
         let options = Options::default();
 
@@ -226,7 +309,42 @@ impl Verifier {
     }
 }
 
+/// Result struct for blinding function.
+/// Primarily used as a wrapper so that `wasm_bindgen` won't complain about the blinding
+/// function returning a tuple.
+#[wasm_bindgen]
+pub struct BlindRes {
+    blinded_msg: BlindedMessage,
+    unblinder: Unblinder,
+}
+
+impl BlindRes {
+    /// Getter for blinded message from blinding result.
+    /// Mostly needed because of the fact that WASM doesn't support Rust's tuples.
+    ///
+    /// # Returns
+    ///
+    /// Blinded message.
+    #[must_use]
+    pub fn get_blinded_msg(&self) -> BlindedMessage {
+        self.blinded_msg.clone()
+    }
+
+    /// Getter for unblinder from blinding result.
+    /// Mostly needed because of the fact that WASM doesn't support Rust's tuples.
+    /// This part should not leave the client as that would compromise privacy.
+    ///
+    /// # Returns
+    ///
+    /// Unblinder for the corresponding blinded message.
+    #[must_use]
+    pub fn get_unblinder(&self) -> Unblinder {
+        self.unblinder.clone()
+    }
+}
+
 /// The blinder for blinding messages before sending them to the signer.
+#[wasm_bindgen]
 pub struct Blinder {
     /// The public key received from the signer.
     pk: blind_rsa_signatures::PublicKey,
@@ -234,6 +352,7 @@ pub struct Blinder {
     options: Options,
 }
 
+#[wasm_bindgen]
 impl Blinder {
     /// Create a new blinder with the public key of the signer.
     ///
@@ -248,7 +367,8 @@ impl Blinder {
     /// # Errors
     ///
     /// If the public key is invalid, an error is returned.
-    pub fn new(pk: Publickey) -> Result<Self> {
+    #[wasm_bindgen(constructor)]
+    pub fn new(pk: PublicKey) -> Result<Blinder> {
         // Since we're not supporting message randomizer, hardcoding default options for now.
         let options = Options::default();
 
@@ -271,7 +391,7 @@ impl Blinder {
     /// # Errors
     ///
     /// If the blinding fails, an error is returned.
-    pub fn blind(&self, msg: &[u8]) -> Result<(BlindedMessage, Unblinder)> {
+    pub fn blind(&self, msg: &[u8]) -> Result<BlindRes> {
         let rng = &mut rand::thread_rng();
         let blinding_result = self.pk.blind(rng, msg, false, &self.options)?;
 
@@ -281,12 +401,17 @@ impl Blinder {
             unblinding_secret: blinding_result.secret,
         };
 
-        Ok((blinding_result.blind_msg.into(), unblinder))
+        Ok(BlindRes {
+            blinded_msg: blinding_result.blind_msg.into(),
+            unblinder,
+        })
     }
 }
 
 /// Struct used for unblinding a signature with the information gathered during
 /// the blinding process.
+#[wasm_bindgen]
+#[derive(Clone)]
 pub struct Unblinder {
     /// The public key received from the signer.
     pk: blind_rsa_signatures::PublicKey,
@@ -296,6 +421,7 @@ pub struct Unblinder {
     unblinding_secret: blind_rsa_signatures::Secret,
 }
 
+#[wasm_bindgen]
 impl Unblinder {
     /// Unblind a signature.
     ///
@@ -348,11 +474,14 @@ mod tests {
         // User:
         let msg = b"secret_message";
         let blinder = Blinder::new(blind_signer.get_public_key().unwrap()).unwrap();
-        let (blind_msg, unblinder) = blinder.blind(msg).unwrap();
-        assert_ne!(msg, blind_msg.0.as_slice());
+        let BlindRes {
+            blinded_msg,
+            unblinder,
+        } = blinder.blind(msg).unwrap();
+        assert_ne!(msg, blinded_msg.0.as_slice());
 
         // Signer:
-        let blind_signature = blind_signer.bling_sign(&blind_msg).unwrap();
+        let blind_signature = blind_signer.bling_sign(&blinded_msg).unwrap();
 
         // User:
         let signature = unblinder
@@ -369,6 +498,8 @@ mod tests {
             .verify_signature(Signature(blind_signature.0), msg)
             .is_err());
         // Same for the blind message and the unblinded signature
-        assert!(verifier.verify_signature(signature, &blind_msg.0).is_err());
+        assert!(verifier
+            .verify_signature(signature, &blinded_msg.0)
+            .is_err());
     }
 }
