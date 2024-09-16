@@ -30,7 +30,7 @@ crypto = { version = "*", path = "./subcrates/crypto" }
 
 
 [dependencies]
-anyhow = "1.0.88"
+anyhow = "1.0.89"
 actix-web = "4.9.0"
 bincode = "1.3.3"
 serde_json = "1.0.128"
