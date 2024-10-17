@@ -19,13 +19,12 @@ halo2_proofs = { git = "https://github.com/ThrasherLT/halo2.git", branch = "Thra
 halo2_gadgets = { git = "https://github.com/ThrasherLT/halo2.git", branch = "ThrasherLT/VerifyingKey-serialization" }
 blind-rsa-signatures = "0.15.1"
 
-# wasm-bindgen = "0.2.93"
-
 ring = { workspace = true, features = ["wasm32_unknown_unknown_js"] }
 tracing.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 base64.workspace = true
+serde_with.workspace = true
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.43"
