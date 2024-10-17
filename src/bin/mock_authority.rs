@@ -22,19 +22,6 @@ struct AppState {
     blind_signer: BlindSigner,
 }
 
-/// The command that the node should execute on startup.
-#[derive(Parser, Clone, Debug)]
-pub enum Cmd {
-    /// Start a new blockchain and create a genesis block.
-    #[clap(about = "Blindly sign input message")]
-    Authenticate {
-        
-    },
-    /// Connect to an existing node of an existing blockchain.
-    #[clap(about = "Print public key for blind signature")]
-    GetPubKey {},
-}
-
 fn new_blind_signer(path: &str) -> Result<BlindSigner> {
     let blind_signer = BlindSigner::new()?;
     let mut blind_signer_cfg_file = std::fs::OpenOptions::new()
