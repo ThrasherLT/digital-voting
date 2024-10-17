@@ -10,10 +10,12 @@ RUN rustup component add rust-src
 
 # These components are not available through rustup and most github actions,
 # so precompiling them here:
-RUN cargo install cargo-deny
+RUN cargo install cargo-deny leptosfmt wasm-pack
+# cargo nextest is supposedly faster than cargo test
+RUN cargo install cargo-nextest --locked
 RUN rustup toolchain install nightly
 RUN cargo +nightly install cargo-udeps
-RUN cargo install wasm-pack
+# Chromium driver is rquired for WASM tests
 RUN apt update
 RUN apt install -y chromium-driver clang
 

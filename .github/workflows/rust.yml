@@ -41,7 +41,7 @@ jobs:
         key: ${{ matrix.target }}-cargo-check-${{ hashFiles('**/Cargo.lock') }}  
         
     - name: Check project
-      run: cargo check --verbose --workspace --target ${{ matrix.target }}
+      run: cargo check --release --verbose --workspace --target ${{ matrix.target }}
 
 
   test:
@@ -62,6 +62,9 @@ jobs:
         # - os: windows-latest
         #   target: i686-pc-windows-msvc
     runs-on: ${{ matrix.os }}
+    # Using container to avoid building nextest.
+    container:
+      image: thrasherlt/digital-voting-rust-multi-toolchain:latest
 
     steps:
     - uses: actions/checkout@v2
@@ -78,7 +81,7 @@ jobs:
         key: ${{ matrix.target }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}  
   
     - name: Run tests
-      run: cargo test --verbose --workspace --target ${{ matrix.target }}
+      run: cargo nextest run --verbose --workspace --target ${{ matrix.target }}
 
 
   formatting:
@@ -86,18 +89,9 @@ jobs:
     strategy:
       matrix:
         include:
+        # It's sufficient to run cargo fmt on just one platform.
         - os: ubuntu-latest
           target: x86_64-unknown-linux-gnu
-        # - os: ubuntu-latest
-        #   target: aarch64-unknown-linux-gnu
-        # - os: macos-latest
-          # target: x86_64-apple-darwin
-        - os: macos-latest
-          target: aarch64-apple-darwin
-        - os: windows-latest
-          target: x86_64-pc-windows-msvc
-        # - os: windows-latest
-        #   target: i686-pc-windows-msvc
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -173,7 +167,7 @@ jobs:
   dependencies:
     name: Check dependencies
     runs-on: ubuntu-latest
-    # Building udeps and deny takes way too long, so using a prebuilt image.
+    # Building udeps and deny takes way too long and udeps needs nightly so using a prebuilt image.
     container:
       image: thrasherlt/digital-voting-rust-multi-toolchain:latest
 
@@ -208,4 +202,4 @@ jobs:
           key: wasm-cargo-test-${{ hashFiles('**/Cargo.lock') }}    
     
       - name: Run tests on WASM
-        run: wasm-pack test --chrome --headless subcrates/crypto/
+        run: wasm-pack test --chrome --verbose --headless subcrates/crypto/
