@@ -66,6 +66,34 @@ impl FromStr for PublicKey {
     }
 }
 
+/// A public key for blind signatures.
+/// Wrapper around the public key from the blind signature crate.
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct SecretKey(pub Vec<u8>);
+
+impl TryFrom<SecretKey> for blind_rsa_signatures::SecretKey {
+    type Error = Error;
+
+    fn try_from(pk: SecretKey) -> Result<blind_rsa_signatures::SecretKey> {
+        blind_rsa_signatures::SecretKey::from_der(&pk.0).map_err(Error::from)
+    }
+}
+
+impl std::fmt::Display for SecretKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
+    }
+}
+
+impl FromStr for SecretKey {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
+        Ok(SecretKey(bytes))
+    }
+}
+
 /// A blind signature.
 /// Wrapper around the blind signature from the blind signature crate.
 #[serde_as]
@@ -144,7 +172,23 @@ impl From<blind_rsa_signatures::BlindedMessage> for BlindedMessage {
     }
 }
 
+impl std::fmt::Display for BlindedMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
+    }
+}
+
+impl FromStr for BlindedMessage {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
+        Ok(BlindedMessage(bytes))
+    }
+}
+
 /// The signer for blindly signing messages.
+#[derive(Debug, Clone)]
 pub struct BlindSigner {
     /// The public key of the signer. This is sent to both the user and the verifier
     pk: blind_rsa_signatures::PublicKey,
@@ -174,6 +218,25 @@ impl BlindSigner {
         Ok(Self { pk, sk, options })
     }
 
+    /// Create a new blind signer from the given secret and private keys.
+    ///
+    /// # Returns
+    ///
+    /// A new blind signer.
+    ///
+    /// # Errors
+    ///
+    /// If parsing fails for any of the two keys, an error is returned.
+    pub fn new_from_keys(pk: PublicKey, sk: SecretKey) -> Result<Self> {
+        let options = Options::default();
+
+        Ok(Self {
+            pk: pk.try_into()?,
+            sk: sk.try_into()?,
+            options,
+        })
+    }
+
     /// Get the public key of the signer in DER format.
     ///
     /// # Returns
@@ -185,6 +248,20 @@ impl BlindSigner {
     /// If the public key cannot be serialized to DER format, an error is returned.
     pub fn get_public_key(&self) -> Result<PublicKey> {
         Ok(PublicKey(self.pk.to_der()?))
+    }
+
+    /// Get the secret key of the signer in DER format.
+    /// NOTE: This key is secret and thus must not be shared!
+    ///
+    /// # Returns
+    ///
+    /// The secret key of the signer in DER format.
+    ///
+    /// # Errors
+    ///
+    /// If the secret key cannot be serialized to DER format, an error is returned.
+    pub fn get_secret_key(&self) -> Result<SecretKey> {
+        Ok(SecretKey(self.sk.to_der()?))
     }
 
     /// Blindly sign a message.
