@@ -8,7 +8,6 @@ use thiserror::Error;
 pub mod api;
 
 pub mod batcher;
-pub mod json_base64;
 pub mod logging;
 
 mod chain;
