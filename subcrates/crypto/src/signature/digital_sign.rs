@@ -1,9 +1,11 @@
 //! A simple digital signature based on ed25519.
 
 // TODO add examples when API is more stable.
-
 use ring::signature::{self, Ed25519KeyPair, KeyPair, UnparsedPublicKey};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
+use crate::impl_key_display;
 
 /// Errors that can occur when working with digital signatures.
 #[derive(Error, Debug)]
@@ -18,17 +20,32 @@ pub enum Error {
     /// Key pair generation failed.
     #[error("Failed to generate a new keypair")]
     KeyPairGenerationFailed,
+    /// Base64 conversion error.
+    #[error("Invalid base64 {:?}", .0)]
+    InvalidBase64(#[from] base64::DecodeError),
 }
 type Result<T> = std::result::Result<T, Error>;
 
+/// A public key for digital signatures.
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct PublicKey(pub Vec<u8>);
+
+impl_key_display!(PublicKey);
+
+/// A digital signature.
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct Signature(pub Vec<u8>);
+
+impl_key_display!(Signature);
+
 /// The signature struct containing the key pair.
 /// Constructed only for signing, verification is done with an associated function.
-pub struct Signature {
+pub struct Signer {
     /// Key pair for signing.
     key_pair: Ed25519KeyPair,
 }
 
-impl Signature {
+impl Signer {
     /// Associated function for verifying a signature.
     ///
     /// # Arguments
@@ -38,7 +55,7 @@ impl Signature {
     /// * `peer_public_key` - The public key of the peer that signed the message.
     ///
     /// # Errors
-    pub fn verify(message: &[u8], signature: &[u8], peer_public_key: &[u8]) -> Result<()> {
+    pub fn verify(message: &[u8], signature: &[u8], peer_public_key: &PublicKey) -> Result<()> {
         let unparsed_public_key = UnparsedPublicKey::new(&signature::ED25519, peer_public_key);
         unparsed_public_key
             .verify(message, signature)
@@ -67,9 +84,9 @@ impl Signature {
     ///
     /// The public key.
     #[must_use]
-    pub fn get_public_key(&self) -> Vec<u8> {
+    pub fn get_public_key(&self) -> PublicKey {
         let public_key = self.key_pair.public_key();
-        public_key.as_ref().to_vec()
+        PublicKey(public_key.as_ref().to_vec())
     }
 
     /// Create a new signature.
@@ -102,9 +119,9 @@ mod tests {
     #[test]
     fn test_signature() {
         let message = b"hello world";
-        let signature = Signature::new().unwrap();
+        let signature = Signer::new().unwrap();
         let signature_bytes = signature.sign(message);
         let public_key = signature.get_public_key();
-        Signature::verify(message, &signature_bytes, &public_key).unwrap();
+        Signer::verify(message, &signature_bytes, &public_key).unwrap();
     }
 }
