@@ -16,9 +16,13 @@ macro_rules! impl_key_display {
         // Implement Display
         impl std::fmt::Display for $t {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    use base64::engine::Engine;
+                use base64::engine::Engine;
 
-                    write!(f, "{}", base64::engine::general_purpose::STANDARD.encode(&self.0))
+                write!(
+                    f,
+                    "{}",
+                    base64::engine::general_purpose::STANDARD.encode(&self.0)
+                )
             }
         }
 
