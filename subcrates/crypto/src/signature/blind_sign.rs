@@ -9,14 +9,13 @@
 // Also the `blind_rsa_signatures` crate has a message_randomizer feature which does not seem useful
 // but should still be investigated if not using it opens us up to vulnerabilities.
 
-use std::str::FromStr;
-
-use base64::prelude::*;
 use blind_rsa_signatures::{self, KeyPair, Options};
 use serde::{Deserialize, Serialize};
 use serde_with::base64::Base64;
 use serde_with::serde_as;
 use thiserror::Error;
+
+use crate::impl_key_display;
 
 /// Errors that can occur when working with blind signatures.
 #[derive(Error, Debug)]
@@ -51,20 +50,7 @@ impl TryFrom<PublicKey> for blind_rsa_signatures::PublicKey {
     }
 }
 
-impl std::fmt::Display for PublicKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
-    }
-}
-
-impl FromStr for PublicKey {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
-        Ok(PublicKey(bytes))
-    }
-}
+impl_key_display!(PublicKey);
 
 /// A public key for blind signatures.
 /// Wrapper around the public key from the blind signature crate.
@@ -79,20 +65,7 @@ impl TryFrom<SecretKey> for blind_rsa_signatures::SecretKey {
     }
 }
 
-impl std::fmt::Display for SecretKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
-    }
-}
-
-impl FromStr for SecretKey {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
-        Ok(SecretKey(bytes))
-    }
-}
+impl_key_display!(SecretKey);
 
 /// A blind signature.
 /// Wrapper around the blind signature from the blind signature crate.
@@ -112,20 +85,7 @@ impl From<BlindSignature> for blind_rsa_signatures::BlindSignature {
     }
 }
 
-impl std::fmt::Display for BlindSignature {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
-    }
-}
-
-impl FromStr for BlindSignature {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
-        Ok(BlindSignature(bytes))
-    }
-}
+impl_key_display!(BlindSignature);
 
 /// An unblinded signature.
 /// Wrapper around the unblinded signature from the blind signature crate.
@@ -145,20 +105,7 @@ impl From<blind_rsa_signatures::Signature> for Signature {
     }
 }
 
-impl std::fmt::Display for Signature {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
-    }
-}
-
-impl FromStr for Signature {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
-        Ok(Signature(bytes))
-    }
-}
+impl_key_display!(Signature);
 
 /// A blinded message.
 /// Wrapper around the blinded message from the blind signature crate.
@@ -172,20 +119,7 @@ impl From<blind_rsa_signatures::BlindedMessage> for BlindedMessage {
     }
 }
 
-impl std::fmt::Display for BlindedMessage {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", BASE64_STANDARD.encode(&self.0))
-    }
-}
-
-impl FromStr for BlindedMessage {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        let bytes = BASE64_STANDARD.decode(s.as_bytes())?;
-        Ok(BlindedMessage(bytes))
-    }
-}
+impl_key_display!(BlindedMessage);
 
 /// The signer for blindly signing messages.
 #[derive(Debug, Clone)]
