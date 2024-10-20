@@ -163,7 +163,10 @@ mod tests {
 
     use wasm_bindgen_test::wasm_bindgen_test;
 
-    fn generate_vote_for_testing(timestamp: Timestamp, candidate: CandidateId) -> (Vote, blind_sign::PublicKey) {
+    fn generate_vote_for_testing(
+        timestamp: Timestamp,
+        candidate: CandidateId,
+    ) -> (Vote, blind_sign::PublicKey) {
         let blind_signer = blind_sign::BlindSigner::new().unwrap();
         let authority_pubkey = blind_signer.get_public_key().unwrap();
         let digital_signer = digital_sign::Signer::new().unwrap();
@@ -178,7 +181,7 @@ mod tests {
 
         (vote, authority_pubkey)
     }
-    
+
     // TODO Not sure if it's a good idea to couple this test to crypto subcrate.
     #[wasm_bindgen_test]
     #[test]
