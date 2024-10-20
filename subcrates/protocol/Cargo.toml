@@ -1,0 +1,23 @@
+[package]
+name = "protocol"
+version = "0.1.0"
+edition = "2021"
+description = """
+Communication protocol for private and transparent electronic elections
+"""
+publish = false
+license = "Apache-2.0"
+repository = "https://github.com/ThrasherLT/digital-voting"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+crypto.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+bincode.workspace = true
+
+[dev-dependencies]
+wasm-bindgen-test.workspace = true

@@ -7,7 +7,7 @@ Cryptography for both private and transparent electronic elections
 """
 publish = false
 license = "Apache-2.0"
-repository = "https://github.com/your/repo"
+repository = "https://github.com/ThrasherLT/digital-voting"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -27,4 +27,4 @@ base64.workspace = true
 serde_with.workspace = true
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.43"
+wasm-bindgen-test.workspace = true
