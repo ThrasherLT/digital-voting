@@ -53,4 +53,3 @@ tracing-subscriber.workspace = true
 bincode.workspace = true
 
 crypto.workspace = true
-protocol.workspace = true

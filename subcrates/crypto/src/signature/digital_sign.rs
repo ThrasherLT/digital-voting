@@ -54,11 +54,7 @@ pub struct Signer {
 /// * `peer_public_key` - The public key of the peer that signed the message.
 ///
 /// # Errors
-pub fn verify(
-    message: &[u8],
-    signature: &Signature,
-    peer_public_key: &PublicKey,
-) -> Result<()> {
+pub fn verify(message: &[u8], signature: &Signature, peer_public_key: &PublicKey) -> Result<()> {
     let unparsed_public_key = UnparsedPublicKey::new(&signature::ED25519, peer_public_key);
     unparsed_public_key
         .verify(message, signature.as_ref())
