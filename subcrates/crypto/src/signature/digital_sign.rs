@@ -43,6 +43,8 @@ impl_key_display!(Signature);
 pub struct Signer {
     /// Key pair for signing.
     key_pair: Ed25519KeyPair,
+    /// PKCS8 for saving the keys to a file.
+    pkcs8: Vec<u8>,
 }
 
 /// Associated function for verifying a signature.
@@ -64,6 +66,52 @@ pub fn verify(message: &[u8], signature: &Signature, peer_public_key: &PublicKey
 }
 
 impl Signer {
+    /// Create a new signature key pair (or a signer).
+    ///
+    /// # Returns
+    ///
+    /// The signer struct containing the keypair.
+    ///
+    /// # Errors
+    ///
+    /// If Pkcs8 or key pair generation fails.
+    pub fn new() -> Result<Self> {
+        let rng = &ring::rand::SystemRandom::new();
+        let pkcs8 = signature::Ed25519KeyPair::generate_pkcs8(rng)
+            .map_err(|_| Error::Pkcs8GenerationFailed)?;
+        let key_pair = signature::Ed25519KeyPair::from_pkcs8(pkcs8.as_ref())
+            .map_err(|_| Error::KeyPairGenerationFailed)?;
+        Ok(Self {
+            key_pair,
+            pkcs8: pkcs8.as_ref().to_vec(),
+        })
+    }
+
+    /// Get existing keypair from pkcs8.
+    ///
+    /// # Returns
+    ///
+    /// The signer struct containing the keypair.
+    ///
+    /// # Errors
+    ///
+    /// If deriving the key pair from Pkcs8 fails.
+    pub fn from_pkcs8(pkcs8: Vec<u8>) -> Result<Self> {
+        let key_pair = signature::Ed25519KeyPair::from_pkcs8(pkcs8.as_ref())
+            .map_err(|_| Error::KeyPairGenerationFailed)?;
+        Ok(Self { key_pair, pkcs8 })
+    }
+
+    /// Get secret key encoded as pkcs8 document for storing the key.
+    ///
+    /// # Returns
+    ///
+    /// secret key in bytes encoded in pkcs8.
+    #[must_use]
+    pub fn get_pkcs8(&self) -> &[u8] {
+        self.pkcs8.as_ref()
+    }
+
     /// Sign a message.
     ///
     /// # Arguments
@@ -88,25 +136,6 @@ impl Signer {
         let public_key = self.key_pair.public_key();
         PublicKey(public_key.as_ref().to_vec())
     }
-
-    /// Create a new signature.
-    ///
-    /// # Returns
-    ///
-    /// The signature struct containing the keypair.
-    ///
-    /// # Errors
-    ///
-    /// If Pkcs8 or key pair generation fails.
-    pub fn new() -> Result<Self> {
-        let rng = &ring::rand::SystemRandom::new();
-        let pkcs8 = signature::Ed25519KeyPair::generate_pkcs8(rng)
-            .map_err(|_| Error::Pkcs8GenerationFailed)?;
-        let key_pair = signature::Ed25519KeyPair::from_pkcs8(pkcs8.as_ref())
-            .map_err(|_| Error::KeyPairGenerationFailed)?;
-
-        Ok(Self { key_pair })
-    }
 }
 
 #[cfg(test)]
@@ -119,9 +148,14 @@ mod tests {
     #[test]
     fn test_signature() {
         let message = b"hello world";
-        let signature = Signer::new().unwrap();
-        let signature_bytes = signature.sign(message);
-        let public_key = signature.get_public_key();
+        let signer_old = Signer::new().unwrap();
+
+        // Test saving and loading of signer:
+        let pkcs8 = signer_old.get_pkcs8();
+        let signer = Signer::from_pkcs8(pkcs8.to_owned()).unwrap();
+
+        let signature_bytes = signer.sign(message);
+        let public_key = signer.get_public_key();
         verify(message, &signature_bytes, &public_key).unwrap();
     }
 }
