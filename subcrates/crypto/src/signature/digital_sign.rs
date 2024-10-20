@@ -81,7 +81,10 @@ impl Signer {
             .map_err(|_| Error::Pkcs8GenerationFailed)?;
         let key_pair = signature::Ed25519KeyPair::from_pkcs8(pkcs8.as_ref())
             .map_err(|_| Error::KeyPairGenerationFailed)?;
-        Ok(Self { key_pair, pkcs8: pkcs8.as_ref().to_vec() })
+        Ok(Self {
+            key_pair,
+            pkcs8: pkcs8.as_ref().to_vec(),
+        })
     }
 
     /// Get existing keypair from pkcs8.
@@ -96,7 +99,7 @@ impl Signer {
     pub fn from_pkcs8(pkcs8: Vec<u8>) -> Result<Self> {
         let key_pair = signature::Ed25519KeyPair::from_pkcs8(pkcs8.as_ref())
             .map_err(|_| Error::KeyPairGenerationFailed)?;
-        Ok(Self { key_pair, pkcs8 })        
+        Ok(Self { key_pair, pkcs8 })
     }
 
     /// Get secret key encoded as pkcs8 document for storing the key.
@@ -104,6 +107,7 @@ impl Signer {
     /// # Returns
     ///
     /// secret key in bytes encoded in pkcs8.
+    #[must_use]
     pub fn get_pkcs8(&self) -> &[u8] {
         self.pkcs8.as_ref()
     }
