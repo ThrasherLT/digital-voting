@@ -17,7 +17,6 @@ rand = "0.8.5"
 blind-rsa-signatures = "0.15.1"
 
 ring = { workspace = true, features = ["wasm32_unknown_unknown_js"] }
-tracing.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 base64.workspace = true
