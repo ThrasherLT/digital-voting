@@ -199,4 +199,6 @@ jobs:
           key: wasm-cargo-test-${{ hashFiles('**/Cargo.lock') }}    
     
       - name: Run tests on WASM
+        # Seems like wasm-pack doesn't allow specifying multiple crates:
         run: wasm-pack test --chrome --headless subcrates/crypto/
+             wasm-pack test --chrome --headless subcrates/protocol/
