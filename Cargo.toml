@@ -7,7 +7,7 @@ A system for both private and transparent electronic elections
 """
 publish = false
 license = "Apache-2.0"
-repository = "https://github.com/your/repo"
+repository = "https://github.com/ThrasherLT/digital-voting"
 default-run = "digital-voting"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,25 +19,27 @@ members = [
 ]
 
 [workspace.dependencies]
-thiserror = "1.0.63"
+thiserror = "1.0.64"
 chrono = { version = "0.4.38", features = ["serde"] }
 serde = { version = "1.0.210", features = ["derive"] }
 tracing = "0.1.40"
 ring = "0.17.8"
 base64 = "0.22.1"
 serde_with = { version = "3.9.0", features = ["base64"] }
+tracing-subscriber = "0.3.18"
+wasm-bindgen-test = "0.3.43"
+bincode = "1.3.3"
 
 crypto = { version = "*", path = "./subcrates/crypto" }
+protocol = { version = "*", path = "./subcrates/protocol" }
 
 [dependencies]
-anyhow = "1.0.89"
+anyhow = "1.0.90"
 actix-web = "4.9.0"
-bincode = "1.3.3"
 tokio = { version = "1.40.0", features = ["full", "test-util"] }
-tracing-subscriber = "0.3.18"
 tracing-appender = "0.2.3"
-tracing-actix-web = "0.7.12"
-clap = { version = "4.5.17", features = ["derive"] }
+tracing-actix-web = "0.7.14"
+clap = { version = "4.5.20", features = ["derive"] }
 rustyline = { version = "14.0.0", features = ["derive"] }
 
 ring.workspace = true
@@ -47,5 +49,7 @@ serde.workspace = true
 thiserror.workspace = true
 serde_with.workspace = true
 base64.workspace = true
+tracing-subscriber.workspace = true
+bincode.workspace = true
 
 crypto.workspace = true

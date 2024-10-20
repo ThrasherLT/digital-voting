@@ -382,6 +382,8 @@ impl Unblinder {
 
 #[cfg(test)]
 mod tests {
+    use crate::signature::digital_sign;
+
     use super::*;
 
     use wasm_bindgen_test::wasm_bindgen_test;
@@ -391,6 +393,12 @@ mod tests {
     fn test_blind_signature() {
         // Signer:
         let blind_signer = BlindSigner::new().unwrap();
+
+        // Testing saving and loading of blind_signer:
+        let pk = blind_signer.get_public_key().unwrap();
+        let sk = blind_signer.get_secret_key().unwrap();
+
+        let blind_signer = BlindSigner::new_from_keys(pk.clone(), sk.clone()).unwrap();
 
         // User:
         let msg = b"secret_message";

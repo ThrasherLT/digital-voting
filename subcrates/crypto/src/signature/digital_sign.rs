@@ -45,25 +45,25 @@ pub struct Signer {
     key_pair: Ed25519KeyPair,
 }
 
+/// Associated function for verifying a signature.
+///
+/// # Arguments
+///
+/// * `message` - The message that was signed.
+/// * `signature` - The signature to verify.
+/// * `peer_public_key` - The public key of the peer that signed the message.
+///
+/// # Errors
+pub fn verify(message: &[u8], signature: &Signature, peer_public_key: &PublicKey) -> Result<()> {
+    let unparsed_public_key = UnparsedPublicKey::new(&signature::ED25519, peer_public_key);
+    unparsed_public_key
+        .verify(message, signature.as_ref())
+        .map_err(|_| Error::SignatureInvalid)?;
+
+    Ok(())
+}
+
 impl Signer {
-    /// Associated function for verifying a signature.
-    ///
-    /// # Arguments
-    ///
-    /// * `message` - The message that was signed.
-    /// * `signature` - The signature to verify.
-    /// * `peer_public_key` - The public key of the peer that signed the message.
-    ///
-    /// # Errors
-    pub fn verify(message: &[u8], signature: &[u8], peer_public_key: &PublicKey) -> Result<()> {
-        let unparsed_public_key = UnparsedPublicKey::new(&signature::ED25519, peer_public_key);
-        unparsed_public_key
-            .verify(message, signature)
-            .map_err(|_| Error::SignatureInvalid)?;
-
-        Ok(())
-    }
-
     /// Sign a message.
     ///
     /// # Arguments
@@ -74,8 +74,8 @@ impl Signer {
     ///
     /// The signature.
     #[must_use]
-    pub fn sign(&self, message: &[u8]) -> Vec<u8> {
-        self.key_pair.sign(message).as_ref().to_vec()
+    pub fn sign(&self, message: &[u8]) -> Signature {
+        Signature(self.key_pair.sign(message).as_ref().to_vec())
     }
 
     /// Get the public key.
@@ -122,6 +122,6 @@ mod tests {
         let signature = Signer::new().unwrap();
         let signature_bytes = signature.sign(message);
         let public_key = signature.get_public_key();
-        Signer::verify(message, &signature_bytes, &public_key).unwrap();
+        verify(message, &signature_bytes, &public_key).unwrap();
     }
 }
