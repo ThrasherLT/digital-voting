@@ -10,10 +10,9 @@ pub mod api;
 pub mod batcher;
 pub mod logging;
 
-mod chain;
-use chain::blockchain::{BlockValue, Blockchain, Error as BlockchainError};
-
-pub type Timestamp = chrono::DateTime<chrono::Utc>;
+mod blockchain;
+use blockchain::{BlockValue, Blockchain, Error as BlockchainError};
+use protocol::{candidate_id::CandidateId, vote::Vote};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -23,36 +22,6 @@ pub enum Error {
     BlockchainError(#[from] BlockchainError),
     #[error("Unknown error")]
     Unknown,
-}
-
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct Vote {
-    voter_pkey: u64,
-    candidate_id: u64,
-    timestamp: Timestamp,
-}
-
-impl Vote {
-    #[must_use]
-    pub fn new(voter_pkey: u64, candidate_id: u64, timestamp: Timestamp) -> Self {
-        Self {
-            voter_pkey,
-            candidate_id,
-            timestamp,
-        }
-    }
-}
-
-impl Display for Vote {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "Voter {} voted for candidate {} on {}",
-            self.voter_pkey,
-            self.candidate_id,
-            self.timestamp.format("%Y-%m-%d %H:%M:%S")
-        )
-    }
 }
 
 impl BlockValue for Vote {}
@@ -88,7 +57,7 @@ impl VotingSystem {
 
         self.blockchain.iter().for_each(|values| {
             for vote in values {
-                let count = tally.entry(vote.candidate_id).or_insert(0);
+                let count = tally.entry(vote.get_candidate().clone()).or_insert(0);
                 *count += 1;
             }
         });
@@ -119,7 +88,7 @@ impl Display for VotingSystem {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct Tally(HashMap<u64, u64>);
+pub struct Tally(HashMap<CandidateId, u64>);
 
 impl Display for Tally {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

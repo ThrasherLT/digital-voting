@@ -1,8 +1,8 @@
 //! This module contains utility code used throughout the project.
 
-pub mod byte_ops;
-
 // TODO Maybe think of better naming.
+// Note: If you're getting errors in this macro, the error probably originates in one of the
+// places where this macro is being actually used.
 #[macro_export]
 macro_rules! impl_key_display {
     ($t:ty) => {

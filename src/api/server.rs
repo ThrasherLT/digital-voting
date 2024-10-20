@@ -4,8 +4,9 @@ use actix_web::{post, routes, web, App, HttpServer, Responder};
 use tracing::info;
 use tracing_actix_web::TracingLogger;
 
-use super::protocol::UnparsedVote;
 use thiserror::Error;
+
+use protocol::vote::Vote;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -39,7 +40,7 @@ async fn greet() -> impl Responder {
 }
 
 #[post("/vote")]
-pub async fn vote(vote: web::Json<UnparsedVote>) -> impl Responder {
+pub async fn vote(vote: web::Json<Vote>) -> impl Responder {
     info!("POST: /vote {vote:?}");
     vote
 }

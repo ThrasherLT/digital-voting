@@ -382,8 +382,6 @@ impl Unblinder {
 
 #[cfg(test)]
 mod tests {
-    use crate::signature::digital_sign;
-
     use super::*;
 
     use wasm_bindgen_test::wasm_bindgen_test;

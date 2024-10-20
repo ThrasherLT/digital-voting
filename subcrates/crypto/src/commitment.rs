@@ -11,12 +11,17 @@ pub enum Error {
     /// The provide commitment could not be verified.
     #[error("The commitment is invalid or does not match the value and nonce")]
     CommitmentInvalid,
+    /// Base64 conversion error.
+    #[error("Invalid base64 {:?}", .0)]
+    InvalidBase64(#[from] base64::DecodeError),
 }
 type Result<T> = std::result::Result<T, Error>;
 
 /// The actual commitment value wrapped in a struct for convenience and with Serde implementations.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Commitment(Vec<u8>);
+
+crate::impl_key_display!(Commitment);
 
 /// A type alias for cleaning up boiler plate code regarding the combine and hash (or commitment) function.
 type CommitmentFn<V, N, H> = Box<dyn Fn(&V, &N) -> H>;
