@@ -10,7 +10,7 @@ use tokio::sync::{
     Notify,
 };
 
-use crate::Timestamp;
+use protocol::timestamp::Timestamp;
 
 /// The Batcher instance itself holding the context for batching and the batched items.
 /// The intended way to add items to the batcher is through the Sender returned by the new function.

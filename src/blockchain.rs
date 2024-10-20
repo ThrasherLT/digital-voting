@@ -3,7 +3,7 @@ use std::fmt::Display;
 use ring::digest;
 use thiserror::Error;
 
-use crate::Timestamp;
+use protocol::timestamp::Timestamp;
 
 #[derive(Error, Debug)]
 pub enum Error {

@@ -8,7 +8,7 @@ use crypto::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::candidate::Candidate;
+use crate::candidate_id::CandidateId;
 use crate::timestamp::{Limits as TimestampLimits, Timestamp};
 
 /// Errors that can occur when working with election votes.
@@ -31,11 +31,11 @@ type Result<T> = std::result::Result<T, Error>;
 
 /// Structure of a vote in the blockchain.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Vote<T> {
+pub struct Vote {
     /// Digital signature public key of the blockchain user who cast the vote.
     public_key: digital_sign::PublicKey,
     /// The candidate for whom the vote is being cast.
-    candidate: T,
+    candidate: CandidateId,
     /// Access token issued by the election authority.
     /// It is a blind signature used to sign the `public_key` of the user.
     /// The public key of this signature is the public key of the election authority.
@@ -47,7 +47,7 @@ pub struct Vote<T> {
     signature: digital_sign::Signature,
 }
 
-impl<T: Candidate> Vote<T> {
+impl Vote {
     /// Create new Vote to be sent to the blockchain.
     ///
     /// # Arguments
@@ -65,7 +65,7 @@ impl<T: Candidate> Vote<T> {
     /// If serializing the struct to bytes for signing fails.
     pub fn new(
         signer: &digital_sign::Signer,
-        candidate: T,
+        candidate: CandidateId,
         timestamp: Timestamp,
         access_token: blind_sign::Signature,
     ) -> Result<Self> {
@@ -81,6 +81,11 @@ impl<T: Candidate> Vote<T> {
         })
     }
 
+    #[must_use]
+    pub fn get_candidate(&self) -> &CandidateId {
+        &self.candidate
+    }
+
     /// Create new Vote to be sent to the blockchain.
     ///
     /// # Arguments
@@ -94,7 +99,7 @@ impl<T: Candidate> Vote<T> {
     /// A new Vote instance.
     fn signed_bytes(
         public_key: &digital_sign::PublicKey,
-        candidate: &T,
+        candidate: &CandidateId,
         timestamp: &Timestamp,
         access_token: &blind_sign::Signature,
     ) -> Result<Vec<u8>> {
@@ -140,19 +145,27 @@ impl<T: Candidate> Vote<T> {
     }
 }
 
+impl std::fmt::Display for Vote {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} voted for candidate {} on {}",
+            self.public_key,
+            self.candidate,
+            self.timestamp.format("%Y-%m-%d %H:%M:%S")
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use crate::candidate::Primitive;
     use wasm_bindgen_test::wasm_bindgen_test;
 
-    // TODO Not sure if it's a good idea to couple this test to crypto subcrate.
-    #[wasm_bindgen_test]
-    #[test]
-    fn test_vote() {
-        let timestamp = chrono::Utc::now();
+    fn generate_vote_for_testing(timestamp: Timestamp, candidate: CandidateId) -> (Vote, blind_sign::PublicKey) {
         let blind_signer = blind_sign::BlindSigner::new().unwrap();
+        let authority_pubkey = blind_signer.get_public_key().unwrap();
         let digital_signer = digital_sign::Signer::new().unwrap();
         let msg = digital_signer.get_public_key();
         let blinder = blind_sign::Blinder::new(blind_signer.get_public_key().unwrap()).unwrap();
@@ -161,9 +174,19 @@ mod tests {
         let access_token = unblinder
             .unblind_signature(blind_signature.clone(), &msg.0)
             .unwrap();
-        let verifier = blind_sign::Verifier::new(blind_signer.get_public_key().unwrap()).unwrap();
+        let vote = Vote::new(&digital_signer, candidate, timestamp, access_token).unwrap();
 
-        let vote = Vote::new(&digital_signer, Primitive::new(1), timestamp, access_token).unwrap();
+        (vote, authority_pubkey)
+    }
+    
+    // TODO Not sure if it's a good idea to couple this test to crypto subcrate.
+    #[wasm_bindgen_test]
+    #[test]
+    fn test_vote() {
+        let timestamp = chrono::Utc::now();
+        let (vote, access_token) = generate_vote_for_testing(timestamp, CandidateId::new(1));
+
+        let verifier = blind_sign::Verifier::new(access_token).unwrap();
         let timestamp_limits = TimestampLimits::new(
             timestamp - std::time::Duration::from_secs(1),
             timestamp + std::time::Duration::from_secs(1),
