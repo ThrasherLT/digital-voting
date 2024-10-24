@@ -41,7 +41,7 @@ jobs:
         key: ${{ matrix.target }}-cargo-check-${{ hashFiles('**/Cargo.lock') }}  
         
     - name: Check project
-      run: cargo check --verbose --workspace --target ${{ matrix.target }}
+      run: cargo check --verbose --workspace --release --target ${{ matrix.target }}
 
 
   test:

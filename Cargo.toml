@@ -54,3 +54,6 @@ bincode.workspace = true
 
 crypto.workspace = true
 protocol.workspace = true
+
+[profile.release]
+lto = true
