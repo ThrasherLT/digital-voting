@@ -1,0 +1,30 @@
+{
+    "manifest_version": 3,
+    "name": "Digital Voting Extension",
+    "description": "A browser extension used for digital voting powered by Leptos and WebAssembly",
+    "version": "0.1",
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Digital Voting",
+        "default_icon": {
+            "48": "./assets/extension-icon.png"
+        }
+    },
+    "permissions": [
+        "storage",
+        "scripting"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "./dist/client_bg.wasm",
+                "./dist/client.js",
+                "./popup.js"
+            ],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+    }
+}

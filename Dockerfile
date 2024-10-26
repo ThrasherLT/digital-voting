@@ -10,7 +10,7 @@ RUN rustup component add rust-src
 
 # These components are not available through rustup and most github actions,
 # so precompiling them here:
-RUN cargo install cargo-deny
+RUN cargo install cargo-deny leptosfmt
 RUN rustup toolchain install nightly
 RUN cargo +nightly install cargo-udeps
 RUN cargo install wasm-pack

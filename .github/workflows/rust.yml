@@ -83,13 +83,9 @@ jobs:
 
   formatting:
     name: Check formatting
-    strategy:
-      matrix:
-        # It is sufficient to check formatting on only one platform.
-        include:
-        - os: ubuntu-latest
-          target: x86_64-unknown-linux-gnu
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    container:
+      image: thrasherlt/digital-voting-rust-multi-toolchain:latest
 
     steps:
     - uses: actions/checkout@v2
@@ -97,11 +93,11 @@ jobs:
     - name: Install Rust Default Toolchain
       run: rustup toolchain install stable --profile default
           
-    - name: Add target
-      run: rustup target add ${{ matrix.target }}
-  
     - name: Check formatting
       run: cargo fmt -- --check
+
+    - name: Check leptos formatting
+      run: leptosfmt --check subcrates/client/src/**.rs
 
 
   docrs:
@@ -182,6 +178,7 @@ jobs:
 
     - name: Check unused dependencies with cargo-udeps
       run: cargo +nightly udeps --workspace --all-targets
+
 
   wasm-test:
     name: Test on WASM

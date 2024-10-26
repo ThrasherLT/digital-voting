@@ -2,3 +2,4 @@
 /logs
 /.vscode
 node-cmd-history.txt
+**/dist/**
