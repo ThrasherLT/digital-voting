@@ -1,0 +1,21 @@
+# `trunk` config to build the browser extension.
+
+# Renamed this file so that `trunk` doesn't load `Trunk.toml` by default, and `trunk serve --open`
+# could still be used for debugging the plugin as a website, since that's faster.
+
+trunk-version = "*"
+
+[build]
+# Specifying a different `.html` target, because it injects all the scripts from an
+# external `popup.js` (see why `inject_scripts` is set to false):
+target = "popup.html"
+# Speed and power:
+release = true
+# Default, but adding for future stability:
+dist = "dist"
+# Removing the hash from the filename simplifies the build process a bits:
+filehash = false
+# Inline scripts aren't allowed in manifest v3:
+inject_scripts = false
+# TODO Browsers throw warnings that SRI is ignored, so this should be investigated in the future:
+no_sri = false

@@ -1,0 +1,18 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2021"
+description = """
+Front end client for private and transparent electronic elections
+"""
+publish = false
+license = "Apache-2.0"
+repository = "https://github.com/ThrasherLT/digital-voting"
+
+[dependencies]
+leptos = { version = "0.6.15", features = ["csr", "tracing"] }
+console_error_panic_hook = "0.1.7"
+tracing-subscriber-wasm = "0.1.0"
+
+tracing.workspace = true
+tracing-subscriber.workspace = true
