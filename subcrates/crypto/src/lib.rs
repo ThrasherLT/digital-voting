@@ -1,7 +1,8 @@
 pub mod commitment;
+pub mod encryption;
 pub mod merkle;
 pub mod signature;
-mod utils;
+pub(crate) mod utils;
 
 // Configuration for wasm-bindgen-test to run tests in browser.
 #[cfg(test)]
