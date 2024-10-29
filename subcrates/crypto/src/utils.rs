@@ -1,11 +1,17 @@
 //! This module contains utility code used throughout the project.
 
-// TODO Maybe think of better naming.
 // Note: If you're getting errors in this macro, the error probably originates in one of the
 // places where this macro is being actually used.
+
+/// Usage: `crate::crypto_key`!(`KeyTypeName`, "Documentation description for the key"));
 #[macro_export]
-macro_rules! impl_key_display {
-    ($t:ty) => {
+macro_rules! crypto_key {
+    ($t:ident, $doc:literal) => {
+        #[doc = $doc]
+        #[serde_with::serde_as]
+        #[derive(Debug, PartialEq, Eq, Clone, serde::Serialize, serde::Deserialize)]
+        pub struct $t(#[serde_as(as = "serde_with::base64::Base64")] Vec<u8>);
+
         impl AsRef<[u8]> for $t {
             fn as_ref(&self) -> &[u8] {
                 &self.0

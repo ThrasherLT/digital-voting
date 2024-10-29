@@ -2,7 +2,6 @@
 
 // TODO add examples whe the API is more stable.
 
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// Errors that can occur when working with commitment schemes.
@@ -17,11 +16,7 @@ pub enum Error {
 }
 type Result<T> = std::result::Result<T, Error>;
 
-/// The actual commitment value wrapped in a struct for convenience and with Serde implementations.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Commitment(Vec<u8>);
-
-crate::impl_key_display!(Commitment);
+crate::crypto_key!(Commitment, "Commitment value");
 
 /// A type alias for cleaning up boiler plate code regarding the combine and hash (or commitment) function.
 type CommitmentFn<V, N, H> = Box<dyn Fn(&V, &N) -> H>;

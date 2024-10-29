@@ -172,10 +172,10 @@ mod tests {
         let digital_signer = digital_sign::Signer::new().unwrap();
         let msg = digital_signer.get_public_key();
         let blinder = blind_sign::Blinder::new(blind_signer.get_public_key().unwrap()).unwrap();
-        let (blind_msg, unblinder) = blinder.blind(&msg.0).unwrap();
+        let (blind_msg, unblinder) = blinder.blind(&msg).unwrap();
         let blind_signature = blind_signer.bling_sign(&blind_msg).unwrap();
         let access_token = unblinder
-            .unblind_signature(blind_signature.clone(), &msg.0)
+            .unblind_signature(blind_signature.clone(), &msg)
             .unwrap();
         let vote = Vote::new(&digital_signer, candidate, timestamp, access_token).unwrap();
 
