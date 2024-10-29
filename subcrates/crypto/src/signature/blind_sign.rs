@@ -10,12 +10,7 @@
 // but should still be investigated if not using it opens us up to vulnerabilities.
 
 use blind_rsa_signatures::{self, KeyPair, Options};
-use serde::{Deserialize, Serialize};
-use serde_with::base64::Base64;
-use serde_with::serde_as;
 use thiserror::Error;
-
-use crate::impl_key_display;
 
 /// Errors that can occur when working with blind signatures.
 #[derive(Error, Debug)]
@@ -36,11 +31,7 @@ type Result<T> = std::result::Result<T, Error>;
 // The following few structs are thin wrappers around the types from the blind signature crate.
 // So if in the future we needed to use a different crate, it wouldn't be tedious to swap out.
 
-/// A public key for blind signatures.
-/// Wrapper around the public key from the blind signature crate.
-#[serde_as]
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct PublicKey(#[serde_as(as = "Base64")] pub Vec<u8>);
+crate::crypto_key!(PublicKey, "Public key for blind signatures");
 
 impl TryFrom<PublicKey> for blind_rsa_signatures::PublicKey {
     type Error = Error;
@@ -50,12 +41,7 @@ impl TryFrom<PublicKey> for blind_rsa_signatures::PublicKey {
     }
 }
 
-impl_key_display!(PublicKey);
-
-/// A public key for blind signatures.
-/// Wrapper around the public key from the blind signature crate.
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct SecretKey(pub Vec<u8>);
+crate::crypto_key!(SecretKey, "Public key for blind signatures");
 
 impl TryFrom<SecretKey> for blind_rsa_signatures::SecretKey {
     type Error = Error;
@@ -65,13 +51,7 @@ impl TryFrom<SecretKey> for blind_rsa_signatures::SecretKey {
     }
 }
 
-impl_key_display!(SecretKey);
-
-/// A blind signature.
-/// Wrapper around the blind signature from the blind signature crate.
-#[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BlindSignature(#[serde_as(as = "Base64")] pub Vec<u8>);
+crate::crypto_key!(BlindSignature, "Blind signature");
 
 impl From<blind_rsa_signatures::BlindSignature> for BlindSignature {
     fn from(blind_signature: blind_rsa_signatures::BlindSignature) -> BlindSignature {
@@ -85,13 +65,7 @@ impl From<BlindSignature> for blind_rsa_signatures::BlindSignature {
     }
 }
 
-impl_key_display!(BlindSignature);
-
-/// An unblinded signature.
-/// Wrapper around the unblinded signature from the blind signature crate.
-#[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Signature(#[serde_as(as = "Base64")] pub Vec<u8>);
+crate::crypto_key!(Signature, "Unblinded signature");
 
 impl From<Signature> for blind_rsa_signatures::Signature {
     fn from(signature: Signature) -> blind_rsa_signatures::Signature {
@@ -105,21 +79,13 @@ impl From<blind_rsa_signatures::Signature> for Signature {
     }
 }
 
-impl_key_display!(Signature);
-
-/// A blinded message.
-/// Wrapper around the blinded message from the blind signature crate.
-#[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BlindedMessage(#[serde_as(as = "Base64")] pub Vec<u8>);
+crate::crypto_key!(BlindedMessage, "Blinded message");
 
 impl From<blind_rsa_signatures::BlindedMessage> for BlindedMessage {
     fn from(blinded_message: blind_rsa_signatures::BlindedMessage) -> BlindedMessage {
         BlindedMessage(blinded_message.0)
     }
 }
-
-impl_key_display!(BlindedMessage);
 
 /// The signer for blindly signing messages.
 #[derive(Debug, Clone)]

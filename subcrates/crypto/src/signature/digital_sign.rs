@@ -2,10 +2,7 @@
 
 // TODO add examples when API is more stable.
 use ring::signature::{self, Ed25519KeyPair, KeyPair, UnparsedPublicKey};
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-use crate::impl_key_display;
 
 /// Errors that can occur when working with digital signatures.
 #[derive(Error, Debug)]
@@ -26,25 +23,20 @@ pub enum Error {
 }
 type Result<T> = std::result::Result<T, Error>;
 
-/// A public key for digital signatures.
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct PublicKey(pub Vec<u8>);
+crate::crypto_key!(PublicKey, "Public key for digital signatures");
+crate::crypto_key!(Signature, "Digital signature");
+crate::crypto_key!(SecretKey, "Secret key for digital signatures");
 
-impl_key_display!(PublicKey);
-
-/// A digital signature.
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct Signature(pub Vec<u8>);
-
-impl_key_display!(Signature);
-
-/// The signature struct containing the key pair.
-/// Constructed only for signing, verification is done with an associated function.
-pub struct Signer {
-    /// Key pair for signing.
-    key_pair: Ed25519KeyPair,
-    /// PKCS8 for saving the keys to a file.
-    pkcs8: Vec<u8>,
+impl SecretKey {
+    /// Get secret key from pkcs8 bytes.
+    ///
+    /// # Returns
+    ///
+    /// The secret key.
+    #[must_use]
+    pub fn from_pkcs8(pkcs8: Vec<u8>) -> Self {
+        Self(pkcs8)
+    }
 }
 
 /// Associated function for verifying a signature.
@@ -65,6 +57,15 @@ pub fn verify(message: &[u8], signature: &Signature, peer_public_key: &PublicKey
     Ok(())
 }
 
+/// The signature struct containing the key pair.
+/// Constructed only for signing, verification is done with an associated function.
+pub struct Signer {
+    /// Key pair for signing.
+    key_pair: Ed25519KeyPair,
+    /// Secret key for saving the key to a file and then creating a new signer from it once loaded.
+    secret_key: SecretKey,
+}
+
 impl Signer {
     /// Create a new signature key pair (or a signer).
     ///
@@ -83,7 +84,7 @@ impl Signer {
             .map_err(|_| Error::KeyPairGenerationFailed)?;
         Ok(Self {
             key_pair,
-            pkcs8: pkcs8.as_ref().to_vec(),
+            secret_key: SecretKey::from_pkcs8(pkcs8.as_ref().to_vec()),
         })
     }
 
@@ -96,10 +97,13 @@ impl Signer {
     /// # Errors
     ///
     /// If deriving the key pair from Pkcs8 fails.
-    pub fn from_pkcs8(pkcs8: Vec<u8>) -> Result<Self> {
-        let key_pair = signature::Ed25519KeyPair::from_pkcs8(pkcs8.as_ref())
+    pub fn from_secret_key(secret_key: SecretKey) -> Result<Self> {
+        let key_pair = signature::Ed25519KeyPair::from_pkcs8(secret_key.as_ref())
             .map_err(|_| Error::KeyPairGenerationFailed)?;
-        Ok(Self { key_pair, pkcs8 })
+        Ok(Self {
+            key_pair,
+            secret_key,
+        })
     }
 
     /// Get secret key encoded as pkcs8 document for storing the key.
@@ -108,8 +112,8 @@ impl Signer {
     ///
     /// secret key in bytes encoded in pkcs8.
     #[must_use]
-    pub fn get_pkcs8(&self) -> &[u8] {
-        self.pkcs8.as_ref()
+    pub fn get_secret_key(&self) -> &SecretKey {
+        &self.secret_key
     }
 
     /// Sign a message.
@@ -151,8 +155,8 @@ mod tests {
         let signer_old = Signer::new().unwrap();
 
         // Test saving and loading of signer:
-        let pkcs8 = signer_old.get_pkcs8();
-        let signer = Signer::from_pkcs8(pkcs8.to_owned()).unwrap();
+        let pkcs8 = signer_old.get_secret_key().as_ref();
+        let signer = Signer::from_secret_key(SecretKey::from_pkcs8(pkcs8.to_owned())).unwrap();
 
         let signature_bytes = signer.sign(message);
         let public_key = signer.get_public_key();
