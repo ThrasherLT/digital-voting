@@ -3,7 +3,7 @@
 // Note: If you're getting errors in this macro, the error probably originates in one of the
 // places where this macro is being actually used.
 
-/// Usage: crate::crypto_key!(KeyTypeName, "Documentation description for the key"));
+/// Usage: `crate::crypto_key`!(`KeyTypeName`, "Documentation description for the key"));
 #[macro_export]
 macro_rules! crypto_key {
     ($t:ident, $doc:literal) => {
