@@ -19,7 +19,7 @@ members = [
 ]
 
 [workspace.dependencies]
-thiserror = "1.0.65"
+thiserror = "1.0.68"
 chrono = { version = "0.4.38", features = ["serde"] }
 serde = { version = "1.0.213", features = ["derive"] }
 tracing = "0.1.40"
