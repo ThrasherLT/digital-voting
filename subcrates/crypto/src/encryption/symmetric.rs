@@ -4,6 +4,8 @@ use ring::{
     aead, digest, pbkdf2,
     rand::{SecureRandom, SystemRandom},
 };
+use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 use thiserror::Error;
 
 /// Error type for symmetric encryption operations.
@@ -132,7 +134,11 @@ impl AsRef<[u8]> for Nonce {
 }
 
 /// Newtype for metadata which is stored alongside the encrypted message.
-pub struct MetaData([u8; UUID_LEN + aead::NONCE_LEN]);
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+pub struct MetaData(
+    #[serde_as(as = "serde_with::base64::Base64")] [u8; UUID_LEN + aead::NONCE_LEN],
+);
 
 impl MetaData {
     /// Create new metadata containing UUID and nonce.
@@ -293,7 +299,7 @@ impl Encryption {
     /// # Errors
     ///
     /// If encryption fails.
-    pub fn encrypt(&mut self, to_encrypt: &mut Vec<u8>) -> Result<MetaData> {
+    pub fn encrypt(&self, to_encrypt: &mut Vec<u8>) -> Result<MetaData> {
         let nonce = Nonce::new()?;
         let metadata = MetaData::new(&self.uuid, &nonce);
         self.key
@@ -357,7 +363,7 @@ mod tests {
         let password = b"Password";
         let plaintext = b"Big secret";
 
-        let mut encryption = Encryption::new(username, password).unwrap();
+        let encryption = Encryption::new(username, password).unwrap();
 
         // Running twice just in case there are issues with nonce.
         for _ in 0..1 {
@@ -385,7 +391,7 @@ mod tests {
         let wrong_password = b"Passwordd";
         let plaintext = b"Big secret";
 
-        let mut encryption = Encryption::new(username, password).unwrap();
+        let encryption = Encryption::new(username, password).unwrap();
 
         let mut buffer: Vec<u8> = plaintext.into();
 
@@ -406,7 +412,7 @@ mod tests {
         let wrong_user = b"Adminn";
         let plaintext = b"Big secret";
 
-        let mut encryption = Encryption::new(username, password).unwrap();
+        let encryption = Encryption::new(username, password).unwrap();
 
         let mut buffer: Vec<u8> = plaintext.into();
 
