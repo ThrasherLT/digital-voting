@@ -202,3 +202,6 @@ jobs:
 
       - name: Run WASM tests for protocol subcrate
         run: wasm-pack test --chrome --headless subcrates/protocol/
+
+      - name: Run WASM tests for client subcrate
+        run: wasm-pack test --chrome --headless subcrates/client/
