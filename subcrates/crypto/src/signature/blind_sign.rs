@@ -31,7 +31,7 @@ type Result<T> = std::result::Result<T, Error>;
 // The following few structs are thin wrappers around the types from the blind signature crate.
 // So if in the future we needed to use a different crate, it wouldn't be tedious to swap out.
 
-crate::crypto_key!(PublicKey, "Public key for blind signatures");
+crate::crypto_key!(PublicKey, "Public key for blind signer");
 
 impl TryFrom<PublicKey> for blind_rsa_signatures::PublicKey {
     type Error = Error;
@@ -41,7 +41,7 @@ impl TryFrom<PublicKey> for blind_rsa_signatures::PublicKey {
     }
 }
 
-crate::crypto_key!(SecretKey, "Public key for blind signatures");
+crate::crypto_key!(SecretKey, "Secret key for blind signer");
 
 impl TryFrom<SecretKey> for blind_rsa_signatures::SecretKey {
     type Error = Error;
@@ -84,6 +84,20 @@ crate::crypto_key!(BlindedMessage, "Blinded message");
 impl From<blind_rsa_signatures::BlindedMessage> for BlindedMessage {
     fn from(blinded_message: blind_rsa_signatures::BlindedMessage) -> BlindedMessage {
         BlindedMessage(blinded_message.0)
+    }
+}
+
+crate::crypto_key!(UnblindingSecret, "Unblinding secret");
+
+impl From<blind_rsa_signatures::Secret> for UnblindingSecret {
+    fn from(secret: blind_rsa_signatures::Secret) -> Self {
+        UnblindingSecret(secret.0)
+    }
+}
+
+impl From<UnblindingSecret> for blind_rsa_signatures::Secret {
+    fn from(secret: UnblindingSecret) -> Self {
+        blind_rsa_signatures::Secret(secret.0)
     }
 }
 
@@ -344,6 +358,40 @@ impl Unblinder {
 
         Ok(signature.into())
     }
+
+    /// Get the blinding secret for this `Unblinder` instance.
+    /// Primarily used to store the `Unblinder` and recreate it when loaded.
+    ///
+    /// # Returns
+    ///
+    /// The unblinding secret for this unblinder instance.
+    ///
+    #[must_use]
+    pub fn get_unblinding_secret(&self) -> UnblindingSecret {
+        self.unblinding_secret.clone().into()
+    }
+
+    /// Recreate an `Unblinder` from a `Signer` public key and an unblinding secret.
+    ///
+    /// # Arguments
+    ///
+    /// * `pk` - The public key of the `Blinder`.
+    /// * `unblinding_secret` - The unblinding secret from which the new `Unblinder` will be constructed.
+    ///
+    /// # Returns
+    ///
+    /// A recreated instance of an `Unblinder`.
+    ///
+    /// # Errors
+    ///
+    /// If public key conversion fails.
+    pub fn from_pk_and_secret(pk: PublicKey, unblinding_secret: UnblindingSecret) -> Result<Self> {
+        Ok(Self {
+            pk: pk.try_into()?,
+            options: Options::default(),
+            unblinding_secret: unblinding_secret.into(),
+        })
+    }
 }
 
 #[cfg(test)]
@@ -374,6 +422,8 @@ mod tests {
         let blind_signature = blind_signer.bling_sign(&blind_msg).unwrap();
 
         // User:
+        let unblinding_secret = unblinder.get_unblinding_secret();
+        let unblinder = Unblinder::from_pk_and_secret(pk, unblinding_secret).unwrap();
         let signature = unblinder
             .unblind_signature(blind_signature.clone(), msg)
             .unwrap();
