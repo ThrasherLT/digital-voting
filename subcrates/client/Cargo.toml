@@ -12,20 +12,20 @@ repository = "https://github.com/ThrasherLT/digital-voting"
 [dependencies]
 leptos = { version = "0.6.15", features = ["csr", "tracing"] }
 console_error_panic_hook = "0.1.7"
-leptos_router = { version = "0.6.15", features = ["csr"] }
 leptos-use = { version = "0.13.8", default-features = false, features = ["use_clipboard", "storage"] }
-reqwasm = "0.5.0"
 tracing-subscriber-wasm = "0.1.0"
 serde_json = "1.0.132"
+codee = { version = "0.2.0", features = ["json_serde"] }
+anyhow = "1.0.91"
+# reqwasm = "0.5.0"
 
 thiserror.workspace = true
 serde.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
-wasm-bindgen-test.workspace = true
 
 crypto.workspace = true
-protocol.workspace = true
-num_enum = "0.7.3"
-codee = { version = "0.2.0", features = ["json_serde"] }
-anyhow = "1.0.91"
+# protocol.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test.workspace = true
