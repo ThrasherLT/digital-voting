@@ -270,7 +270,7 @@ mod tests {
         let mut state = logout_login(state, username, password);
         assert!(matches!(state.get_status(), Status::Validated));
 
-        state.vote(candidate).unwrap();
+        state._vote(candidate).unwrap();
         assert!(matches!(state.get_status(), Status::Voted));
     }
 }
