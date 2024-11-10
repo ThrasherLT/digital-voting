@@ -9,11 +9,21 @@ use crypto::{
     encryption::symmetric,
     signature::{blind_sign, digital_sign},
 };
-use leptos::{RwSignal, SignalGet, SignalSet, SignalWith};
+use leptos::{with, RwSignal, SignalSet, SignalWith};
+use protocol::{self, candidate_id::CandidateId, vote::Vote};
 
 // TODO Add proper documentation when the client's logic is more stable.
 // TODO Figure out how to display user friendly errors.
 // TODO Ensure that keys cannot be read from garbage after user had logged out.
+
+// Helper macro to clean up code around the `with!` Leptos macro:
+macro_rules! apply_read_only {
+    ( $($var:ident),* ) => {
+        $(
+            let $var = $var.read_only();
+        )*
+    };
+}
 
 /// Status of the client.
 /// Used to select which part of the UI to show to the user.
@@ -35,7 +45,7 @@ pub struct State {
     blinded_pk: RwSignal<Option<blind_sign::BlindedMessage>>,
     unblinder: RwSignal<Option<blind_sign::Unblinder>>,
     access_token: RwSignal<Option<blind_sign::Signature>>,
-    candidate: RwSignal<Option<u8>>,
+    candidate: RwSignal<Option<CandidateId>>,
 }
 
 impl State {
@@ -117,27 +127,16 @@ impl State {
     }
 
     pub fn blind(&mut self, authority_key: blind_sign::PublicKey) -> Result<()> {
-        let (signer_secret_key, signer_pub_key) = self
+        let signer_pub_key = self
             .signer
-            .with(|signer| {
-                signer
-                    .as_ref()
-                    .map(|signer| (signer.get_secret_key().to_owned(), signer.get_public_key()))
-            })
+            .with(|signer| signer.as_ref().map(digital_sign::Signer::get_public_key))
             .ok_or(anyhow!("User is not logged in"))?;
         let blinder = blind_sign::Blinder::new(authority_key.clone())?;
         let (blinded_pk, unblinder) = blinder.blind(&signer_pub_key)?;
-        let unblinding_secret = Some(unblinder.get_unblinding_secret());
         self.authority_key.set(Some(authority_key));
         self.unblinder.set(Some(unblinder));
         self.blinded_pk.set(Some(blinded_pk));
-        self.save(KeyStore {
-            signer_sk: Some(signer_secret_key),
-            authority_key: self.authority_key.clone().get(),
-            unblinding_secret,
-            access_token: None,
-            candidate: None,
-        })?;
+        self.save()?;
 
         Ok(())
     }
@@ -146,79 +145,83 @@ impl State {
         self.blinded_pk
     }
 
-    // TODO Maybe it's possible to write this method in a cleaner way?
     pub fn unblind(&mut self, blind_signature: blind_sign::BlindSignature) -> Result<()> {
-        let (signer_secret_key, signer_pub_key) = self
-            .signer
-            .with(|signer| {
-                signer
-                    .as_ref()
-                    .map(|signer| (signer.get_secret_key().to_owned(), signer.get_public_key()))
-            })
-            .ok_or(anyhow!("User is not logged in"))?;
+        let Self {
+            signer, unblinder, ..
+        } = self;
+        apply_read_only!(signer, unblinder);
+        let access_token = with!(|signer, unblinder| {
+            match (signer, unblinder) {
+                (Some(signer), Some(unblinder)) => unblinder
+                    .unblind_signature(blind_signature, &signer.get_public_key())
+                    .map_err(std::convert::Into::into),
+                _ => Err(anyhow!("State is corrupted")),
+            }
+        })?;
+        self.access_token.set(Some(access_token));
+        self.save()?;
 
-        let (access_token, unblinding_secret) = self.unblinder.with(|unblinder| {
-            unblinder
-                .as_ref()
-                .map(|unblinder| {
-                    (
-                        unblinder.unblind_signature(blind_signature, &signer_pub_key),
-                        unblinder.get_unblinding_secret(),
-                    )
-                })
-                .map_or((None, None), |(access_token, unblinding_secret)| {
-                    (Some(access_token), Some(unblinding_secret))
-                })
-        });
-        let access_token = if let Some(access_token) = access_token {
-            Some(access_token?)
-        } else {
-            None
-        };
+        Ok(())
+    }
 
-        self.save(KeyStore {
-            signer_sk: Some(signer_secret_key),
-            authority_key: self.authority_key.clone().get(),
-            unblinding_secret,
+    pub fn vote(&mut self, candidate: &str, _blockchain_addr: &str) -> Result<()> {
+        let candidate = CandidateId::new(candidate.parse()?);
+        let Self {
+            signer,
             access_token,
-            candidate: None,
+            ..
+        } = self;
+        apply_read_only!(signer, access_token);
+
+        let _vote = with!(|signer, access_token| {
+            match (signer, access_token) {
+                (Some(signer), Some(access_token)) => {
+                    Vote::new(signer, candidate.clone(), chrono::Utc::now(), access_token)
+                        .map_err(std::convert::Into::into)
+                }
+                _ => Err(anyhow!("State is corrupted")),
+            }
         })?;
+
+        self.candidate.set(Some(candidate.clone()));
+        self.save()?;
 
         Ok(())
     }
 
-    pub fn _vote(&mut self, candidate: u8) -> Result<()> {
-        self.candidate.set(Some(candidate));
-        // TODO Add logic to send the vote to the blockchain here.
-
-        let unblinding_secret = self.unblinder.with(|unblinder| {
-            unblinder
-                .as_ref()
-                .map(blind_sign::Unblinder::get_unblinding_secret)
-        });
-        self.save(KeyStore {
-            signer_sk: self.signer.with(|signer| {
-                signer
-                    .as_ref()
-                    .map(|signer| signer.get_secret_key().to_owned())
-            }),
-            authority_key: self.authority_key.clone().get(),
-            unblinding_secret,
-            access_token: self.access_token.clone().get(),
-            candidate: Some(candidate),
-        })?;
-
-        Ok(())
-    }
-
-    fn save(&self, keystore: KeyStore) -> Result<()> {
-        self.encryption
+    fn save(&self) -> Result<()> {
+        let Self {
+            encryption,
+            signer,
+            authority_key,
+            unblinder,
+            access_token,
+            candidate,
+            ..
+        } = self;
+        apply_read_only!(signer, authority_key, unblinder, access_token, candidate);
+        let key_store = with!(
+            |signer, authority_key, unblinder, access_token, candidate| {
+                KeyStore {
+                    signer_sk: signer
+                        .as_ref()
+                        .map(|signer| signer.get_secret_key().clone()),
+                    authority_key: authority_key.clone(),
+                    unblinding_secret: unblinder
+                        .as_ref()
+                        .map(|unblinder| unblinder.get_unblinding_secret().clone()),
+                    access_token: access_token.clone(),
+                    candidate: candidate.clone(),
+                }
+            }
+        );
+        encryption
             .with(|encryption| {
                 encryption
                     .as_ref()
-                    .map(|encryption| keystore.encrypt(encryption))
+                    .map(|encryption| key_store.encrypt(encryption))
             })
-            .ok_or(anyhow!("User not logged in"))??
+            .ok_or(anyhow!("User is not logged in"))??
             .save();
 
         Ok(())
@@ -243,7 +246,8 @@ mod tests {
     fn test_state() {
         let username = "Admin";
         let password = "Password";
-        let candidate = 5;
+        let candidate = "5";
+        let blockchain_addr = "www.blockchain.com";
 
         let authority_signer = blind_sign::BlindSigner::new().unwrap();
 
@@ -270,7 +274,7 @@ mod tests {
         let mut state = logout_login(state, username, password);
         assert!(matches!(state.get_status(), Status::Validated));
 
-        state._vote(candidate).unwrap();
+        state.vote(candidate, blockchain_addr).unwrap();
         assert!(matches!(state.get_status(), Status::Voted));
     }
 }

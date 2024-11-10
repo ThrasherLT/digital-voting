@@ -593,11 +593,13 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "codee",
  "console_error_panic_hook",
  "crypto",
  "leptos",
  "leptos-use",
+ "protocol",
  "serde",
  "serde_json",
  "thiserror 2.0.1",

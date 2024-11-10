@@ -8,6 +8,7 @@ use crypto::{
 };
 use leptos::{SignalGet, SignalSet};
 use leptos_use::storage::use_local_storage;
+use protocol::candidate_id::CandidateId;
 
 // TODO Add documentation.
 
@@ -17,7 +18,7 @@ pub struct KeyStore {
     pub authority_key: Option<blind_sign::PublicKey>,
     pub unblinding_secret: Option<blind_sign::UnblindingSecret>,
     pub access_token: Option<blind_sign::Signature>,
-    pub candidate: Option<u8>,
+    pub candidate: Option<CandidateId>,
 }
 
 impl KeyStore {

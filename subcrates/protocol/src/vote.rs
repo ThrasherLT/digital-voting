@@ -67,16 +67,16 @@ impl Vote {
         signer: &digital_sign::Signer,
         candidate: CandidateId,
         timestamp: Timestamp,
-        access_token: blind_sign::Signature,
+        access_token: &blind_sign::Signature,
     ) -> Result<Self> {
         let public_key = signer.get_public_key();
-        let to_sign = Self::signed_bytes(&public_key, &candidate, &timestamp, &access_token)?;
+        let to_sign = Self::signed_bytes(&public_key, &candidate, &timestamp, access_token)?;
 
         Ok(Self {
             public_key,
             candidate,
             timestamp,
-            access_token,
+            access_token: access_token.clone(),
             signature: signer.sign(&to_sign),
         })
     }
@@ -177,7 +177,7 @@ mod tests {
         let access_token = unblinder
             .unblind_signature(blind_signature.clone(), &msg)
             .unwrap();
-        let vote = Vote::new(&digital_signer, candidate, timestamp, access_token).unwrap();
+        let vote = Vote::new(&digital_signer, candidate, timestamp, &access_token).unwrap();
 
         (vote, authority_pubkey)
     }
