@@ -232,6 +232,7 @@ impl State {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use leptos::SignalGet;
 
     fn logout_login(_state: State, username: &str, password: &str) -> State {
         let mut state = State::new();

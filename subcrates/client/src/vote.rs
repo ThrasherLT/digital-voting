@@ -57,9 +57,8 @@ pub fn Cast() -> impl IntoView {
                         }
                         prop:value=move || candidate.get()
                     >
-                        <Config/>
-                    </select>
-                    <button type="submit">Vote</button>
+                        <Config />
+                    </select> <button type="submit">Vote</button>
                 </label>
             </form>
         </label>
