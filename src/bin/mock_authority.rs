@@ -1,29 +1,58 @@
 //! This is a mock of the election authorities servers which will be responsible for ensuring the
 //! eligibility of the voters by signing their public keys. This is only used for testing purposes.
 
-use std::io::Write;
+use std::{io::Write, sync::Arc};
 
 use actix_web::{get, post, routes, web, App, HttpResponse, HttpServer, Responder};
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use crypto::signature::blind_sign::{self, BlindSigner};
-use digital_voting::logging::start_logger;
 use serde::{self, Deserialize, Serialize};
+
+use crypto::signature::blind_sign;
+use digital_voting::logging::start_logger;
+use process_io::cli::StdioReader;
 
 #[derive(Parser, Clone, Debug)]
 pub struct Args {
-    #[clap(short = 'a', long = "address", default_value = "127.0.0.1:8081")]
+    #[clap(
+        short = 'a',
+        long = "address",
+        default_value = "127.0.0.1:8081",
+        help = "Specify the ip:port on which to host the mock election authority HTTP server"
+    )]
     pub addr: std::net::SocketAddr,
-    #[clap(short = 'k', long = "new-keys", default_value_t = false)]
+    #[clap(
+        short = 'k',
+        long = "new-keys",
+        default_value_t = false,
+        help = "Generate new blind signer keys instead of loading them from FS"
+    )]
     pub new_keys: bool,
+    #[clap(
+        short = 'n',
+        long = "no-http",
+        default_value_t = false,
+        help = "Only run CLI and do not start an http server"
+    )]
+    pub no_http_server: bool,
+}
+
+#[derive(Parser, Clone, Debug)]
+pub enum Cmd {
+    #[clap(about = "Blind sign a blinded message")]
+    BlindSign {
+        blinded_msg: blind_sign::BlindedMessage,
+    },
+    #[clap(about = "Get blinder public key")]
+    GetPubkey,
 }
 
 struct AppState {
-    blind_signer: BlindSigner,
+    blind_signer: Arc<blind_sign::BlindSigner>,
 }
 
-fn new_blind_signer(path: &str) -> Result<BlindSigner> {
-    let blind_signer = BlindSigner::new()?;
+fn new_blind_signer(path: &str) -> Result<blind_sign::BlindSigner> {
+    let blind_signer = blind_sign::BlindSigner::new()?;
     let mut blind_signer_cfg_file = std::fs::OpenOptions::new()
         .write(true)
         .create(true)
@@ -36,7 +65,7 @@ fn new_blind_signer(path: &str) -> Result<BlindSigner> {
     Ok(blind_signer)
 }
 
-fn setup_blind_signer(arg_new_keys: bool) -> Result<BlindSigner> {
+fn setup_blind_signer(arg_new_keys: bool) -> Result<blind_sign::BlindSigner> {
     let blind_signer_cfg_path = "authority-blind-signer-cfg";
 
     if arg_new_keys {
@@ -54,7 +83,7 @@ fn setup_blind_signer(arg_new_keys: bool) -> Result<BlindSigner> {
     }
 }
 
-fn load_blind_signer_from_fs(path: &str) -> Result<BlindSigner> {
+fn load_blind_signer_from_fs(path: &str) -> Result<blind_sign::BlindSigner> {
     if std::path::Path::new(path).exists() {
         let blind_signer_cfg = std::fs::read_to_string(path)?;
         let mut blind_signer_cfg = blind_signer_cfg.lines().take(2);
@@ -68,7 +97,7 @@ fn load_blind_signer_from_fs(path: &str) -> Result<BlindSigner> {
                 .ok_or(anyhow!("Failed to parse blind signer secret key"))?
                 .parse()?,
         );
-        Ok(BlindSigner::new_from_keys(pk, sk)?)
+        Ok(blind_sign::BlindSigner::new_from_keys(pk, sk)?)
     } else {
         Err(anyhow!("Blind signer config not found"))
     }
@@ -78,15 +107,59 @@ fn load_blind_signer_from_fs(path: &str) -> Result<BlindSigner> {
 async fn main() -> Result<()> {
     let _tracing_worker_guard = start_logger("mock_authority.log")?;
     let args = Args::parse();
+    let blind_signer = Arc::new(setup_blind_signer(args.new_keys)?);
 
     println!("Starting mock authority server on: {}...", args.addr);
+    println!("With authority PK:\n{}", blind_signer.get_public_key()?);
+    if args.no_http_server {
+        run_cli(&blind_signer)?;
+    } else {
+        let blind_signer_clone = blind_signer.clone();
+        tokio::task::spawn_blocking(move || run_cli(&blind_signer_clone));
 
-    let blind_signer = setup_blind_signer(args.new_keys)?;
+        run_server(blind_signer, args).await?;
+    }
 
+    Ok(())
+}
+
+fn run_cli(blind_signer: &blind_sign::BlindSigner) -> Result<()> {
+    let mut stdio_reader = StdioReader::new()?;
+
+    loop {
+        let line = match stdio_reader.read_stdio_blocking() {
+            Ok(line) => line,
+            Err(e) => {
+                // TODO
+                println!("Quitting: {e:?}, send interrupt again to kill the server (WIP)");
+                break;
+            }
+        };
+        let res = match Cmd::try_parse_from(line) {
+            Ok(Cmd::BlindSign { blinded_msg }) => blind_signer
+                .bling_sign(&blinded_msg)
+                .map_err(std::convert::Into::into)
+                .map(|blinded_signature| blinded_signature.to_string()),
+            Ok(Cmd::GetPubkey) => blind_signer
+                .get_public_key()
+                .map_err(std::convert::Into::into)
+                .map(|blinder_pk| blinder_pk.to_string()),
+            Err(e) => Err(anyhow!("Unsupported command: {e}")),
+        };
+
+        match res {
+            Ok(res) => println!("{res}"),
+            Err(error) => println!("ERROR: {error}"),
+        }
+    }
+
+    Ok(())
+}
+
+async fn run_server(blind_signer: Arc<blind_sign::BlindSigner>, args: Args) -> Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(AppState {
-                // TODO expect:
                 blind_signer: blind_signer.clone(),
             }))
             .service(greet)

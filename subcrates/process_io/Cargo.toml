@@ -1,0 +1,16 @@
+[package]
+name = "process_io"
+version = "0.1.0"
+edition = "2021"
+description = """
+Code required for code common to process IO
+"""
+publish = false
+license = "Apache-2.0"
+repository = "https://github.com/ThrasherLT/digital-voting"
+
+[dependencies]
+rustyline = { version = "14.0.0", features = ["derive"] }
+shellwords = "1.1.0"
+
+thiserror.workspace = true
