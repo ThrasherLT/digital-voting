@@ -32,6 +32,7 @@ bincode = "1.3.3"
 
 crypto = { version = "*", path = "./subcrates/crypto" }
 protocol = { version = "*", path = "./subcrates/protocol" }
+process_io = { version = "*", path = "./subcrates/process_io" }
 
 [dependencies]
 anyhow = "1.0.93"
@@ -54,6 +55,7 @@ bincode.workspace = true
 
 crypto.workspace = true
 protocol.workspace = true
+process_io.workspace = true
 
 [profile.release]
 lto = true

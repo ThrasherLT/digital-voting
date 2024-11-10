@@ -922,6 +922,7 @@ dependencies = [
  "chrono",
  "clap",
  "crypto",
+ "process_io",
  "protocol",
  "ring",
  "rustyline",
@@ -2258,6 +2259,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "process_io"
+version = "0.1.0"
+dependencies = [
+ "rustyline",
+ "shellwords",
+ "thiserror 2.0.1",
+]
+
+[[package]]
 name = "protocol"
 version = "0.1.0"
 dependencies = [
@@ -2737,6 +2747,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
 dependencies = [
  "lazy_static",
+]
+
+[[package]]
+name = "shellwords"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89e515aa4699a88148ed5ef96413ceef0048ce95b43fbc955a33bde0a70fcae6"
+dependencies = [
+ "lazy_static",
+ "regex",
 ]
 
 [[package]]

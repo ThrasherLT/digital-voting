@@ -1,10 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
 
-use digital_voting::{
-    api::server_cli::{Args, StdioReader},
-    logging::start_logger,
-};
+use digital_voting::{api::server_cli::Args, logging::start_logger};
+use process_io::cli::StdioReader;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -18,7 +16,8 @@ async fn main() -> Result<()> {
             let line = match stdio_reader.read_stdio_blocking() {
                 Ok(line) => line,
                 Err(e) => {
-                    println!("Quitting: {e:?}, send interrupt again to kill the server");
+                    // TODO
+                    println!("Quitting: {e:?}, send interrupt again to kill the server (WIP)");
                     break;
                 }
             };
