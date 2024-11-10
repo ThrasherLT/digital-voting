@@ -13,6 +13,7 @@ mod state;
 mod storage;
 mod utils;
 mod validation;
+mod vote;
 
 use state::{State, Status};
 
@@ -49,6 +50,9 @@ pub fn App() -> impl IntoView {
         </Show>
         <Show when=move || status.with(|status| matches!(status, Status::LoggedIn)) fallback=|| ()>
             <validation::ValidateVoter />
+        </Show>
+        <Show when=move || status.with(|status| matches!(status, Status::Validated)) fallback=|| ()>
+            <vote::Cast />
         </Show>
     }
 }

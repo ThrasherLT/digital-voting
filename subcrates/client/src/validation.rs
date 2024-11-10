@@ -74,6 +74,7 @@ pub fn AuthKeyInput() -> impl IntoView {
 #[component]
 pub fn BlindedPkDisplay() -> impl IntoView {
     let state = expect_context::<State>();
+    // TODO Check if nothing is overwriting this value, saw some flicker on the screen.
     let display_value =
         Signal::derive(move || state.get_blinded_pk().get().map(|val| val.to_string()));
 
