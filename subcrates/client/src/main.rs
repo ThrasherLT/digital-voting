@@ -9,6 +9,7 @@ use leptos::{
 };
 
 mod authentication;
+mod settings;
 mod state;
 mod storage;
 mod utils;
@@ -47,6 +48,9 @@ pub fn App() -> impl IntoView {
     view! {
         <Show when=move || status.with(|status| matches!(status, Status::LoggedOut)) fallback=|| ()>
             <authentication::User />
+        </Show>
+        <Show when=move || status.with(|status| { *status > Status::LoggedOut }) fallback=|| ()>
+            <settings::SettingsPanel />
         </Show>
         <Show when=move || status.with(|status| matches!(status, Status::LoggedIn)) fallback=|| ()>
             <validation::ValidateVoter />

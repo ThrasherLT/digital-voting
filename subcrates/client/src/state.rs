@@ -2,9 +2,11 @@
 //! Altho Leptos recomments using local signals for the logic, instead of a global state,
 //! the code, in that case, becomes unacceptably complicated.
 //! Besides that, this way the logic can be tested with simple unit tests at the end of this file.
+//! Reactive leptos slices were'nt used because they clone struct members on each read and that is an
+//! issue since some State struct members are keys which can be relatively large.
 
 use crate::storage::{KeyStore, Storage};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use crypto::{
     encryption::symmetric,
     signature::{blind_sign, digital_sign},
@@ -14,7 +16,6 @@ use protocol::{self, candidate_id::CandidateId, vote::Vote};
 
 // TODO Add proper documentation when the client's logic is more stable.
 // TODO Figure out how to display user friendly errors.
-// TODO Ensure that keys cannot be read from garbage after user had logged out.
 
 // Helper macro to clean up code around the `with!` Leptos macro:
 macro_rules! apply_read_only {
@@ -27,6 +28,7 @@ macro_rules! apply_read_only {
 
 /// Status of the client.
 /// Used to select which part of the UI to show to the user.
+#[derive(PartialEq, PartialOrd)]
 pub enum Status {
     LoggedOut,
     LoggedIn,
@@ -39,6 +41,7 @@ pub enum Status {
 /// The global state of the client.
 #[derive(Clone, Default)]
 pub struct State {
+    username: RwSignal<Option<String>>,
     encryption: RwSignal<Option<symmetric::Encryption>>,
     signer: RwSignal<Option<digital_sign::Signer>>,
     authority_key: RwSignal<Option<blind_sign::PublicKey>>,
@@ -54,7 +57,10 @@ impl State {
     }
 
     pub fn register_user(&mut self, username: &str, password: &str) -> Result<()> {
-        let encryption = symmetric::Encryption::new(username.as_bytes(), password.as_bytes())?;
+        if Storage::load(username).is_some() {
+            bail!("User already exists")
+        }
+        let encryption = symmetric::Encryption::new(password.as_bytes())?;
         let signer = digital_sign::Signer::new()?;
 
         KeyStore {
@@ -65,25 +71,18 @@ impl State {
             candidate: None,
         }
         .encrypt(&encryption)?
-        .save();
+        .save(username);
 
+        self.username.set(Some(username.to_owned()));
         self.encryption.set(Some(encryption));
         self.signer.set(Some(signer));
 
         Ok(())
     }
 
-    pub fn can_login() -> bool {
-        Storage::load().is_some()
-    }
-
     pub fn login_user(&mut self, username: &str, password: &str) -> Result<()> {
-        let storage = Storage::load().ok_or(anyhow!("User data is empty"))?;
-        let encryption = symmetric::Encryption::load(
-            username.as_bytes(),
-            password.as_bytes(),
-            storage.get_metadata(),
-        )?;
+        let storage = Storage::load(username).ok_or(anyhow!("User or password are incorrect"))?;
+        let encryption = symmetric::Encryption::load(password.as_bytes(), storage.get_metadata())?;
         let key_store = storage.decrypt(&encryption)?;
         let signer = if let Some(signer_sk) = key_store.signer_sk {
             Some(digital_sign::Signer::from_secret_key(signer_sk)?)
@@ -101,6 +100,7 @@ impl State {
             None
         };
 
+        self.username.set(Some(username.to_owned()));
         self.encryption.set(Some(encryption));
         self.signer.set(signer);
         self.authority_key.set(key_store.authority_key);
@@ -112,6 +112,28 @@ impl State {
         self.candidate.set(key_store.candidate);
 
         Ok(())
+    }
+
+    pub fn logout(&mut self) {
+        self.username.set(None);
+        self.encryption.set(None);
+        self.signer.set(None);
+        self.authority_key.set(None);
+        self.blinded_pk.set(None);
+        self.unblinder.set(None);
+        self.access_token.set(None);
+        self.candidate.set(None);
+    }
+
+    // TODO Ensure that keys cannot be read from garbage after user had logged out.
+    pub fn delete_user(&mut self) {
+        self.username.with(|username| {
+            username.as_ref().map(|username| {
+                Storage::delete(username);
+            })
+        });
+
+        self.logout();
     }
 
     pub fn get_status(&self) -> Status {
@@ -191,6 +213,7 @@ impl State {
 
     fn save(&self) -> Result<()> {
         let Self {
+            username,
             encryption,
             signer,
             authority_key,
@@ -215,14 +238,18 @@ impl State {
                 }
             }
         );
-        encryption
+        let storage = encryption
             .with(|encryption| {
                 encryption
                     .as_ref()
                     .map(|encryption| key_store.encrypt(encryption))
             })
-            .ok_or(anyhow!("User is not logged in"))??
-            .save();
+            .ok_or(anyhow!("User is not logged in"))??;
+        username.with(|username| {
+            if let Some(username) = username.as_ref() {
+                storage.save(username)
+            }
+        });
 
         Ok(())
     }
@@ -255,10 +282,8 @@ mod tests {
         let mut state = State::new();
         assert!(matches!(state.get_status(), Status::LoggedOut));
 
-        assert!(!State::can_login());
         state.register_user(username, password).unwrap();
         assert!(matches!(state.get_status(), Status::LoggedIn));
-        assert!(State::can_login());
         let mut state = logout_login(state, username, password);
         assert!(matches!(state.get_status(), Status::LoggedIn));
 

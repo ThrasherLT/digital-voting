@@ -1,3 +1,5 @@
+//! This file contains the logic for validating the voter's right to vote.
+
 use std::str::FromStr;
 
 use crypto::signature::blind_sign;
