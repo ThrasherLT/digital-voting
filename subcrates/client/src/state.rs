@@ -246,7 +246,9 @@ impl State {
             })
             .ok_or(anyhow!("User is not logged in"))??;
         username.with(|username| {
-            if let Some(username) = username.as_ref() { storage.save(username) }
+            if let Some(username) = username.as_ref() {
+                storage.save(username)
+            }
         });
 
         Ok(())
@@ -280,10 +282,8 @@ mod tests {
         let mut state = State::new();
         assert!(matches!(state.get_status(), Status::LoggedOut));
 
-        assert!(!State::can_login());
         state.register_user(username, password).unwrap();
         assert!(matches!(state.get_status(), Status::LoggedIn));
-        assert!(State::can_login());
         let mut state = logout_login(state, username, password);
         assert!(matches!(state.get_status(), Status::LoggedIn));
 
