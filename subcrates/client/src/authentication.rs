@@ -1,3 +1,5 @@
+//! File for the code required to authenticate the user.
+
 // TODO Docummentation
 // TODO local storage only works on pages that have the same origin
 
@@ -10,9 +12,7 @@ use leptos::{
 #[component]
 pub fn User() -> impl IntoView {
     view! {
-        <Show when=State::can_login fallback=|| ()>
-            <Login />
-        </Show>
+        <Login />
         <Register />
     }
 }

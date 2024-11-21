@@ -1,3 +1,5 @@
+//! File containing common util code.
+
 use leptos::{component, view, IntoView, Show, Signal, SignalGet, SignalWith};
 use leptos_use::{use_clipboard, UseClipboardReturn};
 

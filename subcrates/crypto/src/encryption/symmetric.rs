@@ -1,7 +1,7 @@
 //! This is a wrapper module for symmetric encryption using AEAD.
 
 use ring::{
-    aead, digest, pbkdf2,
+    aead, pbkdf2,
     rand::{SecureRandom, SystemRandom},
 };
 use serde::{Deserialize, Serialize};
@@ -11,11 +11,11 @@ use thiserror::Error;
 /// Error type for symmetric encryption operations.
 #[derive(Error, Debug)]
 pub enum Error {
-    /// Could not generate an UUID from system random.
-    #[error("Failed to generate UUID")]
-    UuidGeneration,
-    /// Could not generate an UUID from system random.
-    #[error("Failed to generate UUID")]
+    /// Could not generate an SALT from system random.
+    #[error("Failed to generate SALT")]
+    SaltGeneration,
+    /// Could not generate an SALT from system random.
+    #[error("Failed to generate SALT")]
     NonceGeneration,
     /// Could not convert iteration count to non zero number.
     #[error("Bad non zero iteration count")]
@@ -34,71 +34,31 @@ type Result<T> = std::result::Result<T, Error>;
 
 /// Length of the salt segment in bytes. Chosen because this is the usual recommended byte cound.
 const SALT_LEN: usize = 32;
-/// Length of the UUID segment in bytes. Chosen kind of arbitrarily.
-const UUID_LEN: usize = 32;
 
-// Newtype for salt segment.
+/// Newtype for unique SALT generated for each user and used for deriving salt for encryption key.
 struct Salt([u8; SALT_LEN]);
 
 impl Salt {
-    // TODO make sure this is secure enough.
-    /// Derive new salt from username and uuid.
-    /// Since browser local storage is not secure and there's no other way to persist data,
-    /// salt needs to be deterministic, but since this makes it less secure, salt is derived
-    /// from the username and a randomly generated UUID that's stored alongside the encrypted
-    /// keys inside the browser's local storage. So the attacker would need to know both the
-    /// username (which will not be stored in the browser's local storage) and the UUID to
-    /// derive the salt.
-    ///
-    /// # Arguments
-    ///
-    /// `username` - The user's username.
-    /// `uuid` - The UUID generated for the user.
+    /// Generate new SALT.
     ///
     /// # Returns
     ///
-    /// A new salt derived from username and UUID.
-    fn new(username: &[u8], uuid: &Uuid) -> Self {
-        let mut combined = username.to_owned();
-        combined.extend_from_slice(uuid.as_ref());
-
-        let mut salt = [0u8; SALT_LEN];
-        salt.copy_from_slice(digest::digest(&digest::SHA256, &combined).as_ref());
-
-        Salt(salt)
-    }
-}
-
-impl AsRef<[u8]> for Salt {
-    fn as_ref(&self) -> &[u8] {
-        self.0.as_ref()
-    }
-}
-
-/// Newtype for unique UUID generated for each user and used for deriving salt for encryption key.
-struct Uuid([u8; UUID_LEN]);
-
-impl Uuid {
-    /// Generate new UUID.
-    ///
-    /// # Returns
-    ///
-    /// New UUID.
+    /// New SALT.
     ///
     /// # Errors
     ///
     /// If `SystemRandom` fails to generate random bytes.
     fn new() -> Result<Self> {
-        let mut uuid = [0u8; UUID_LEN];
+        let mut salt = [0u8; SALT_LEN];
         SystemRandom::new()
-            .fill(&mut uuid)
-            .map_err(|_| Error::UuidGeneration)?;
+            .fill(&mut salt)
+            .map_err(|_| Error::SaltGeneration)?;
 
-        Ok(Uuid(uuid))
+        Ok(Salt(salt))
     }
 }
 
-impl AsRef<[u8]> for Uuid {
+impl AsRef<[u8]> for Salt {
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
     }
@@ -137,39 +97,39 @@ impl AsRef<[u8]> for Nonce {
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct MetaData(
-    #[serde_as(as = "serde_with::base64::Base64")] [u8; UUID_LEN + aead::NONCE_LEN],
+    #[serde_as(as = "serde_with::base64::Base64")] [u8; SALT_LEN + aead::NONCE_LEN],
 );
 
 impl MetaData {
-    /// Create new metadata containing UUID and nonce.
+    /// Create new metadata containing SALT and nonce.
     ///
     /// # Arguments
     ///
-    /// `uuid` - The UUID generated for the specific user.
+    /// `salt` - The SALT generated for the specific user.
     /// `nonce` - The nonce used to decrypt, specific to each encrypted message.
     ///
     /// # Returns
     ///
     /// New metadata.
-    fn new(uuid: &Uuid, nonce: &Nonce) -> Self {
-        let mut buffer = [0u8; UUID_LEN + aead::NONCE_LEN];
-        buffer[0..UUID_LEN].copy_from_slice(&uuid.0);
-        buffer[UUID_LEN..].copy_from_slice(&nonce.0);
+    fn new(salt: &Salt, nonce: &Nonce) -> Self {
+        let mut buffer = [0u8; SALT_LEN + aead::NONCE_LEN];
+        buffer[0..SALT_LEN].copy_from_slice(&salt.0);
+        buffer[SALT_LEN..].copy_from_slice(&nonce.0);
 
         Self(buffer)
     }
 
-    /// Create new metadata from bytes containing UUID and nonce.
+    /// Create new metadata from bytes containing SALT and nonce.
     ///
     /// # Arguments
     ///
-    /// `bytes` - The bytes of size `UUID_LEN` + `NONCE_LEN` containing UUID and nonce.
+    /// `bytes` - The bytes of size `SALT_LEN` + `NONCE_LEN` containing SALT and nonce.
     ///
     /// # Returns
     ///
     /// New metadata.
     #[must_use]
-    pub fn from_bytes(bytes: [u8; UUID_LEN + aead::NONCE_LEN]) -> Self {
+    pub fn from_bytes(bytes: [u8; SALT_LEN + aead::NONCE_LEN]) -> Self {
         Self(bytes)
     }
 
@@ -180,21 +140,21 @@ impl MetaData {
     /// Nonce.
     fn get_nonce(&self) -> Nonce {
         let mut buffer = [0u8; aead::NONCE_LEN];
-        buffer.copy_from_slice(&self.0[UUID_LEN..]);
+        buffer.copy_from_slice(&self.0[SALT_LEN..]);
 
         Nonce(buffer)
     }
 
-    /// Get UUID from metadata.
+    /// Get SALT from metadata.
     ///
     /// # Returns
     ///
-    /// UUID.
-    fn get_uuid(&self) -> Uuid {
-        let mut buffer = [0u8; UUID_LEN];
-        buffer.copy_from_slice(&self.0[..UUID_LEN]);
+    /// SALT.
+    fn get_salt(&self) -> Salt {
+        let mut buffer = [0u8; SALT_LEN];
+        buffer.copy_from_slice(&self.0[..SALT_LEN]);
 
-        Uuid(buffer)
+        Salt(buffer)
     }
 }
 
@@ -208,9 +168,9 @@ impl AsRef<[u8]> for MetaData {
 pub struct Encryption {
     /// The AEAD key used to encrypt and decrypt messages.
     key: aead::LessSafeKey,
-    /// The UUID specific to the user and required to encrypt and decrypt messages.
+    /// The SALT specific to the user and required to encrypt and decrypt messages.
     /// Will also be stored alongside the encrypted message.
-    uuid: Uuid,
+    salt: Salt,
 }
 
 impl Encryption {
@@ -218,7 +178,6 @@ impl Encryption {
     ///
     /// # Arguments
     ///
-    /// `username` - The new username for the user which will be used to encrypt and decrypt messages.
     /// `password` - The new password for the user which will be used to encrypt and decrypt messages.
     ///
     /// # Returns
@@ -228,18 +187,17 @@ impl Encryption {
     /// # Errors
     ///
     /// If key derivation fails.
-    /// If UUID generation fails.
-    pub fn new(username: &[u8], password: &[u8]) -> Result<Self> {
-        Self::derive_key(username, password, Uuid::new()?)
+    /// If SALT generation fails.
+    pub fn new(password: &[u8]) -> Result<Self> {
+        Self::derive_key(password, Salt::new()?)
     }
 
     /// Load an existing encryption instance with a the username and password which were used to create it.
     ///
     /// # Arguments
     ///
-    /// `username` - The username for the user which will be used to encrypt and decrypt messages.
     /// `password` - The password for the user which will be used to encrypt and decrypt messages.
-    /// `metadata` - The metadata for loading the UUID of the user.
+    /// `metadata` - The metadata for loading the SALT of the user.
     ///
     /// # Returns
     ///
@@ -248,17 +206,17 @@ impl Encryption {
     /// # Errors
     ///
     /// If key derivation fails.
-    pub fn load(username: &[u8], password: &[u8], metadata: &MetaData) -> Result<Self> {
-        Self::derive_key(username, password, metadata.get_uuid())
+    pub fn load(password: &[u8], metadata: &MetaData) -> Result<Self> {
+        Self::derive_key(password, metadata.get_salt())
     }
 
-    /// Derive key for the username, password and UUID.
+    /// Derive key for the username, password and SALT.
     ///
     /// # Arguments
     ///
     /// `username` - The username for the user which will be used to encrypt and decrypt messages.
     /// `password` - The password for the user which will be used to encrypt and decrypt messages.
-    /// `uuid` - The UUID of the user.
+    /// `salt` - The SALT of the user.
     ///
     /// # Returns
     ///
@@ -267,8 +225,7 @@ impl Encryption {
     /// # Errors
     ///
     /// If key derivation fails.
-    fn derive_key(username: &[u8], password: &[u8], uuid: Uuid) -> Result<Self> {
-        let salt = Salt::new(username, &uuid);
+    fn derive_key(password: &[u8], salt: Salt) -> Result<Self> {
         let mut key = [0; 32];
         pbkdf2::derive(
             pbkdf2::PBKDF2_HMAC_SHA256,
@@ -281,7 +238,7 @@ impl Encryption {
             .map_err(|_| Error::KeyDerive)?;
         let key = aead::LessSafeKey::new(key);
 
-        Ok(Self { key, uuid })
+        Ok(Self { key, salt })
     }
 
     /// Encrypt a message.
@@ -301,7 +258,7 @@ impl Encryption {
     /// If encryption fails.
     pub fn encrypt(&self, to_encrypt: &mut Vec<u8>) -> Result<MetaData> {
         let nonce = Nonce::new()?;
-        let metadata = MetaData::new(&self.uuid, &nonce);
+        let metadata = MetaData::new(&self.salt, &nonce);
         self.key
             .seal_in_place_append_tag(
                 aead::Nonce::assume_unique_for_key(nonce.0),
@@ -359,11 +316,10 @@ mod tests {
     #[wasm_bindgen_test]
     #[test]
     fn test_encryption() {
-        let username = b"Admin";
         let password = b"Password";
         let plaintext = b"Big secret";
 
-        let encryption = Encryption::new(username, password).unwrap();
+        let encryption = Encryption::new(password).unwrap();
 
         // Running twice just in case there are issues with nonce.
         for _ in 0..1 {
@@ -375,7 +331,7 @@ mod tests {
 
             // Make sure the same nonce is allowed to be used twice to decrypt.
             for _ in 0..1 {
-                let decryption = Encryption::load(username, password, &metadata).unwrap();
+                let decryption = Encryption::load(password, &metadata).unwrap();
                 let decrypted_plaintext = decryption.decrypt(&mut buffer, &metadata).unwrap();
 
                 assert_eq!(decrypted_plaintext, plaintext);
@@ -386,12 +342,11 @@ mod tests {
     #[wasm_bindgen_test]
     #[test]
     fn test_encryption_wrong_password() {
-        let username = b"Admin";
         let password = b"Password";
         let wrong_password = b"Passwordd";
         let plaintext = b"Big secret";
 
-        let encryption = Encryption::new(username, password).unwrap();
+        let encryption = Encryption::new(password).unwrap();
 
         let mut buffer: Vec<u8> = plaintext.into();
 
@@ -399,28 +354,7 @@ mod tests {
 
         assert_ne!(buffer[..plaintext.len()], *plaintext);
 
-        let decryption = Encryption::load(username, wrong_password, &metadata).unwrap();
-        assert!(decryption.decrypt(&mut buffer, &metadata).is_err());
-        assert_ne!(buffer[..plaintext.len()], *plaintext);
-    }
-
-    #[wasm_bindgen_test]
-    #[test]
-    fn test_encryption_wrong_user() {
-        let username = b"Admin";
-        let password = b"Password";
-        let wrong_user = b"Adminn";
-        let plaintext = b"Big secret";
-
-        let encryption = Encryption::new(username, password).unwrap();
-
-        let mut buffer: Vec<u8> = plaintext.into();
-
-        let metadata = encryption.encrypt(&mut buffer).unwrap();
-
-        assert_ne!(buffer[..plaintext.len()], *plaintext);
-
-        let decryption = Encryption::load(wrong_user, password, &metadata).unwrap();
+        let decryption = Encryption::load(wrong_password, &metadata).unwrap();
         assert!(decryption.decrypt(&mut buffer, &metadata).is_err());
         assert_ne!(buffer[..plaintext.len()], *plaintext);
     }

@@ -1,3 +1,5 @@
+//! This file contains the logic for casting an actual vote.
+
 use leptos::{
     component, create_node_ref, create_signal, event_target_value, expect_context, html, view,
     IntoView, NodeRef, Show, SignalGet, SignalSet,

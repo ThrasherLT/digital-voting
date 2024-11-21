@@ -44,16 +44,21 @@ impl Storage {
         &self.metadata
     }
 
-    pub fn load() -> Option<Self> {
-        let (storage, _, _) = use_local_storage::<Option<Storage>, JsonSerdeCodec>("signle-user");
+    pub fn load(username: &str) -> Option<Self> {
+        let (storage, _, _) = use_local_storage::<Option<Storage>, JsonSerdeCodec>(username);
 
         storage.get()
     }
 
-    pub fn save(self) {
-        let (_, set_storage, _) =
-            use_local_storage::<Option<Storage>, JsonSerdeCodec>("signle-user");
+    pub fn save(self, username: &str) {
+        let (_, set_storage, _) = use_local_storage::<Option<Storage>, JsonSerdeCodec>(username);
         set_storage.set(Some(self));
+    }
+
+    pub fn delete(username: &str) {
+        let (_, _, clear) = use_local_storage::<Option<Storage>, JsonSerdeCodec>(username);
+        // TODO Make sure data doesn't stay in leftover garbage:
+        clear();
     }
 
     pub fn decrypt(self, encryption: &symmetric::Encryption) -> Result<KeyStore> {
