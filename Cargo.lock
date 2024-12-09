@@ -1631,9 +1631,9 @@ dependencies = [
 
 [[package]]
 name = "leptos-use"
-version = "0.13.8"
+version = "0.13.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17a16cc63083779fe1081dd714b99a856e46d5ce427e7ce94300b0199a3ccb12"
+checksum = "5ad813007f413c960b33437371c0d0a3d6e6159da2357147429a2e79b0423932"
 dependencies = [
  "cfg-if",
  "codee",
@@ -3388,9 +3388,9 @@ dependencies = [
 
 [[package]]
 name = "web-sys"
-version = "0.3.70"
+version = "0.3.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26fdeaafd9bd129f65e7c031593c24d62186301e0c72c8978fa1678be7d532c0"
+checksum = "f6488b90108c040df0fe62fa815cbdee25124641df01814dd7282749234c6112"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
