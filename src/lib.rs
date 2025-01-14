@@ -6,13 +6,13 @@ use std::{collections::HashMap, fmt::Display};
 use thiserror::Error;
 
 pub mod api;
+pub mod state;
 
 pub mod batcher;
-pub mod logging;
 
 mod blockchain;
 use blockchain::{BlockValue, Blockchain, Error as BlockchainError};
-use protocol::{candidate_id::CandidateId, vote::Vote};
+use protocol::{config::CandidateId, vote::Vote};
 
 #[derive(Error, Debug)]
 pub enum Error {

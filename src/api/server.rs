@@ -1,46 +1,83 @@
 use std::net::SocketAddr;
 
-use actix_web::{post, routes, web, App, HttpServer, Responder};
-use tracing::info;
+use actix_cors::Cors;
+use actix_web::{get, post, routes, web, App, HttpResponse, HttpServer, Responder};
+use anyhow::{bail, Result};
+use tokio::{select, sync::oneshot, task::JoinHandle};
+use tracing::{info, trace};
 use tracing_actix_web::TracingLogger;
-
-use thiserror::Error;
 
 use protocol::vote::Vote;
 
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("Actix error: {0}")]
-    ActixError(#[from] std::io::Error),
-}
-type Result<T> = std::result::Result<T, Error>;
+use crate::state::State;
 
-pub async fn run(addr: SocketAddr) -> Result<()> {
-    println!("starting HTTP server at http://localhost:8080");
+pub async fn run(state: State, addr: SocketAddr) -> Result<(oneshot::Sender<()>, JoinHandle<Result<(), anyhow::Error>>)> {    
+    let (tx, rx) = oneshot::channel::<()>();
+    let state = web::Data::new(state);
+    println!("starting HTTP server at {}", addr);
 
-    HttpServer::new(|| {
-        App::new()
-            // enable logger
-            .wrap(TracingLogger::default())
-            .service(greet)
-            .service(vote)
-    })
-    .bind(addr)?
-    .run()
-    .await?;
+    let handle = tokio::spawn(async move {
+        let server = HttpServer::new(move || {
+            App::new()
+                // Actix web takes an app state factory here and uses an Arc internally.
+                // It will error in runtime, if state is passed inside an Arc.
+                // Also this closure is called once for every worker, meaning that, if you
+                // pass State::new(), it'll create a new instance for each worker.
+                // https://actix.rs/docs/application#shared-mutable-state
+                .app_data(state.clone())
+                // Enable logger
+                .wrap(TracingLogger::default())
+                .wrap(
+                    Cors::default()
+                        // TODO Probably should be more specific, even though it's a browser extension:
+                        .allow_any_origin()
+                        .allow_any_header()
+                        .allowed_methods(vec!["GET", "POST"])
+                        .max_age(3600),
+                )
+                .service(greet)
+                .service(vote)
+                .service(config)
+                .service(health)
+        })
+        .bind(addr)?;
 
-    Ok(())
+        select! {
+            _ = rx => {
+                Ok(())
+            },
+            _ = server.run() => {
+                bail!("Server stopped")
+            }
+        }
+    });
+
+    Ok((tx, handle))
 }
 
 #[routes]
 #[get("/")]
 #[get("/index.html")]
 async fn greet() -> impl Responder {
-    "Hello! Please send a POST request to /vote with a JSON body, containing a public key, a vote, a timestamp, and a signature.\n"
+    HttpResponse::Ok().body("Welcome to the digital voting blockchain! (WIP).\n")
 }
 
 #[post("/vote")]
 pub async fn vote(vote: web::Json<Vote>) -> impl Responder {
     info!("POST: /vote {vote:?}");
-    vote
+    HttpResponse::Ok()
+}
+
+#[get("/config")]
+pub async fn config(state: web::Data<State>) -> impl Responder {
+    if let Ok(json) = serde_json::to_string(state.get_blockchain_config()) {
+        HttpResponse::Ok().body(json)
+    } else {
+        HttpResponse::InternalServerError().body("Failed to get config")
+    }
+}
+
+#[get("/health")]
+pub async fn health() -> impl Responder {
+    HttpResponse::Ok()
 }

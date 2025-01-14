@@ -1,0 +1,39 @@
+version: '3.8'
+
+x-common: &common
+    build:
+      context: .
+    ports:
+      - "${HOST_PORT}:${APP_PORT}"
+    volumes:
+      - ./data:/data:rw
+      - ./../target/:/exec:ro
+      - ./startup.sh:/startup.sh
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["/startup.sh"]
+    stdin_open: true
+    tty: true
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:${APP_PORT}/health"]
+      interval: 10s
+      retries: 5
+      start_period: 4s
+      timeout: 4s
+
+
+services:
+  authority:
+    deploy:
+      replicas: 3
+    environment:
+      - APP=authority
+      - APP_PORT=${APP_PORT}
+    <<: *common
+
+  node:
+    deploy:
+      replicas: 5
+    environment:
+      - APP=node
+      - APP_PORT=${APP_PORT}
+    <<: *common

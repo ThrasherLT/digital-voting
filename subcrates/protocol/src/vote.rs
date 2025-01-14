@@ -8,8 +8,10 @@ use crypto::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::candidate_id::CandidateId;
-use crate::timestamp::{Limits as TimestampLimits, Timestamp};
+use crate::{
+    config::CandidateId,
+    timestamp::{Limits as TimestampLimits, Timestamp},
+};
 
 /// Errors that can occur when working with election votes.
 #[derive(Error, Debug)]
@@ -41,7 +43,7 @@ pub struct Vote {
     /// The public key of this signature is the public key of the election authority.
     /// Each access token on the blockchain must be unique.
     timestamp: Timestamp,
-    access_token: blind_sign::Signature,
+    access_tokens: Vec<blind_sign::Signature>,
     /// Digital signature corresponding to the `public_key`.
     /// It signs all previous fields.
     signature: digital_sign::Signature,
@@ -67,16 +69,16 @@ impl Vote {
         signer: &digital_sign::Signer,
         candidate: CandidateId,
         timestamp: Timestamp,
-        access_token: &blind_sign::Signature,
+        access_tokens: Vec<blind_sign::Signature>,
     ) -> Result<Self> {
         let public_key = signer.get_public_key();
-        let to_sign = Self::signed_bytes(&public_key, &candidate, &timestamp, access_token)?;
+        let to_sign = Self::signed_bytes(&public_key, &candidate, &timestamp, &access_tokens)?;
 
         Ok(Self {
             public_key,
             candidate,
             timestamp,
-            access_token: access_token.clone(),
+            access_tokens,
             signature: signer.sign(&to_sign),
         })
     }
@@ -101,13 +103,20 @@ impl Vote {
         public_key: &digital_sign::PublicKey,
         candidate: &CandidateId,
         timestamp: &Timestamp,
-        access_token: &blind_sign::Signature,
+        access_tokens: &Vec<blind_sign::Signature>,
     ) -> Result<Vec<u8>> {
-        let mut to_sign =
-            Vec::with_capacity(public_key.len() + candidate.as_ref().len() + access_token.len());
+        let mut access_tokens_total_len = 0;
+        for access_token in access_tokens {
+            access_tokens_total_len += access_token.len();
+        }
+        let mut to_sign = Vec::with_capacity(
+            public_key.len() + std::mem::size_of::<CandidateId>() + access_tokens_total_len,
+        );
         to_sign.extend_from_slice(public_key.as_ref());
-        to_sign.extend_from_slice(candidate.as_ref());
-        to_sign.extend_from_slice(access_token.as_ref());
+        to_sign.extend_from_slice(&candidate.to_le_bytes());
+        for access_token in access_tokens {
+            to_sign.extend_from_slice(access_token.as_ref());
+        }
         to_sign.append(&mut bincode::serialize(&timestamp)?);
 
         Ok(to_sign)
@@ -130,12 +139,14 @@ impl Vote {
         if !timestamp_limits.verify(self.timestamp) {
             return Err(Error::InvalidTimestmap(self.timestamp));
         }
-        access_token_verifyer.verify_signature(self.access_token.clone(), &self.public_key)?;
+        for access_token in &self.access_tokens {
+            access_token_verifyer.verify_signature(access_token.clone(), &self.public_key)?;
+        }
         let signed_bytes = Self::signed_bytes(
             &self.public_key,
             &self.candidate,
             &self.timestamp,
-            &self.access_token,
+            &self.access_tokens,
         )?;
         Ok(digital_sign::verify(
             &signed_bytes,
@@ -166,35 +177,47 @@ mod tests {
     fn generate_vote_for_testing(
         timestamp: Timestamp,
         candidate: CandidateId,
-    ) -> (Vote, blind_sign::PublicKey) {
-        let blind_signer = blind_sign::BlindSigner::new().unwrap();
-        let authority_pubkey = blind_signer.get_public_key().unwrap();
+        authority_count: usize,
+    ) -> (Vote, Vec<blind_sign::PublicKey>) {
         let digital_signer = digital_sign::Signer::new().unwrap();
-        let msg = digital_signer.get_public_key();
-        let blinder = blind_sign::Blinder::new(blind_signer.get_public_key().unwrap()).unwrap();
-        let (blind_msg, unblinder) = blinder.blind(&msg).unwrap();
-        let blind_signature = blind_signer.bling_sign(&blind_msg).unwrap();
-        let access_token = unblinder
-            .unblind_signature(blind_signature.clone(), &msg)
-            .unwrap();
-        let vote = Vote::new(&digital_signer, candidate, timestamp, &access_token).unwrap();
+        let mut access_tokens = Vec::new();
+        let mut authority_pubkeys = Vec::new();
 
-        (vote, authority_pubkey)
+        for _ in 0..authority_count - 1 {
+            let blind_signer = blind_sign::BlindSigner::new().unwrap();
+            authority_pubkeys.push(blind_signer.get_public_key().unwrap());
+            let msg = digital_signer.get_public_key();
+            let blinder = blind_sign::Blinder::new(blind_signer.get_public_key().unwrap()).unwrap();
+            let (blind_msg, unblinder) = blinder.blind(&msg).unwrap();
+            let blind_signature = blind_signer.bling_sign(&blind_msg).unwrap();
+
+            let access_token = unblinder
+                .unblind_signature(blind_signature.clone(), &msg)
+                .unwrap();
+            access_tokens.push(access_token);
+        }
+        let vote = Vote::new(&digital_signer, candidate, timestamp, access_tokens).unwrap();
+
+        (vote, authority_pubkeys)
     }
 
     // TODO Not sure if it's a good idea to couple this test to crypto subcrate.
     #[wasm_bindgen_test]
     #[test]
     fn test_vote() {
+        let authority_count = 3;
         let timestamp = chrono::Utc::now();
-        let (vote, access_token) = generate_vote_for_testing(timestamp, CandidateId::new(1));
-
-        let verifier = blind_sign::Verifier::new(access_token).unwrap();
+        let (vote, authority_pubkeys) =
+            generate_vote_for_testing(timestamp, 2.into(), authority_count);
         let timestamp_limits = TimestampLimits::new(
             timestamp - std::time::Duration::from_secs(1),
             timestamp + std::time::Duration::from_secs(1),
         )
         .unwrap();
-        vote.verify(&verifier, &timestamp_limits).unwrap();
+
+        for i in 0..authority_count - 1 {
+            let verifier = blind_sign::Verifier::new(authority_pubkeys[i].clone()).unwrap();
+            vote.verify(&verifier, &timestamp_limits).unwrap();
+        }
     }
 }
