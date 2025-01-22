@@ -72,7 +72,7 @@ impl Vote {
         access_tokens: Vec<blind_sign::Signature>,
     ) -> Result<Self> {
         let public_key = signer.get_public_key();
-        let to_sign = Self::signed_bytes(&public_key, &candidate, &timestamp, &access_tokens)?;
+        let to_sign = Self::signed_bytes(&public_key, candidate, timestamp, &access_tokens)?;
 
         Ok(Self {
             public_key,
@@ -101,8 +101,8 @@ impl Vote {
     /// A new Vote instance.
     fn signed_bytes(
         public_key: &digital_sign::PublicKey,
-        candidate: &CandidateId,
-        timestamp: &Timestamp,
+        candidate: CandidateId,
+        timestamp: Timestamp,
         access_tokens: &Vec<blind_sign::Signature>,
     ) -> Result<Vec<u8>> {
         let mut access_tokens_total_len = 0;
@@ -126,26 +126,27 @@ impl Vote {
     ///
     /// # Arguments
     ///
-    /// - `access_token_verifyer` - Verifyer of the blind signature of the election authority.
+    /// - `access_token_verifiers` - A list of verifiers of the access tokens.
+    /// - `timestamp_limits` - The limits of an acceptable timestamp.
     ///
     /// # Errors
     ///
     /// If the vote is invalid or corrupted.
     pub fn verify(
         &self,
-        access_token_verifyer: &blind_sign::Verifier,
+        access_token_verifiers: &[blind_sign::Verifier],
         timestamp_limits: &TimestampLimits,
     ) -> Result<()> {
         if !timestamp_limits.verify(self.timestamp) {
             return Err(Error::InvalidTimestmap(self.timestamp));
         }
-        for access_token in &self.access_tokens {
-            access_token_verifyer.verify_signature(access_token.clone(), &self.public_key)?;
+        for (i, access_token) in self.access_tokens.iter().enumerate() {
+            access_token_verifiers[i].verify_signature(access_token.clone(), &self.public_key)?;
         }
         let signed_bytes = Self::signed_bytes(
             &self.public_key,
-            &self.candidate,
-            &self.timestamp,
+            self.candidate,
+            self.timestamp,
             &self.access_tokens,
         )?;
         Ok(digital_sign::verify(
@@ -161,9 +162,7 @@ impl std::fmt::Display for Vote {
         write!(
             f,
             "{} voted for candidate {} on {}",
-            self.public_key,
-            self.candidate,
-            self.timestamp.format("%Y-%m-%d %H:%M:%S")
+            self.public_key, self.candidate, self.timestamp,
         )
     }
 }
@@ -214,10 +213,10 @@ mod tests {
             timestamp + std::time::Duration::from_secs(1),
         )
         .unwrap();
-
-        for i in 0..authority_count - 1 {
-            let verifier = blind_sign::Verifier::new(authority_pubkeys[i].clone()).unwrap();
-            vote.verify(&verifier, &timestamp_limits).unwrap();
-        }
+        let authorities: Vec<blind_sign::Verifier> = authority_pubkeys
+            .iter()
+            .map(|pk| blind_sign::Verifier::new(pk.clone()).unwrap())
+            .collect();
+        vote.verify(&authorities, &timestamp_limits).unwrap();
     }
 }

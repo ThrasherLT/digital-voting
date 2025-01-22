@@ -57,7 +57,7 @@ impl VotingSystem {
 
         self.blockchain.iter().for_each(|values| {
             for vote in values {
-                let count = tally.entry(vote.get_candidate().clone()).or_insert(0);
+                let count = tally.entry(*vote.get_candidate()).or_insert(0);
                 *count += 1;
             }
         });

@@ -1,81 +1,56 @@
-//! This file contains the logic for casting an actual vote.
-
 use leptos::{
-    component, create_node_ref, create_signal, event_target_value, expect_context, html, view,
-    IntoView, NodeRef, Show, SignalGet, SignalSet,
+    component,
+    prelude::{signal, ElementChild, Get, OnAttribute, Read, RwSignal, Set, Show, Signal},
+    view, IntoView,
 };
 
-use crate::state::State;
+use crate::{
+    candidate_selection,
+    states::{access_tokens::AccessTokens, candidate::Candidate, user::User},
+    validation, verification,
+};
 
+#[must_use]
 #[component]
-pub fn Cast() -> impl IntoView {
-    let mut state = expect_context::<State>();
-    let (get_error, set_error) = create_signal(None);
-    // Temporarily holding the selected candidate in this signal before commiting it to the state.
-    let (candidate, set_candidate) = create_signal(Option::<String>::None);
+pub fn Vote(user: Signal<User>, blockchain: RwSignal<String>) -> impl IntoView {
+    let access_tokens = RwSignal::new(
+        AccessTokens::load(&user.read(), &blockchain.read()).expect("Access tokens to be loaded"),
+    );
+    let (candidate, set_candidate) =
+        signal(Candidate::load(&user.read(), &blockchain.read()).expect("Candidate to load"));
 
-    let blockchain_addr_ref: NodeRef<html::Input> = create_node_ref();
-
-    let on_submit = move |ev: leptos::ev::SubmitEvent| {
-        // stop the page from reloading:
-        ev.prevent_default();
-        let blockchain_addr = blockchain_addr_ref
-            .get()
-            .expect("Blockchain URL input should be mounted")
-            .value();
-
-        if blockchain_addr.is_empty() {
-            set_error.set(Some("Blockchain URL cannot be empty".to_owned()));
-            return;
-        }
-        let selected_candidate = candidate.get();
-        match selected_candidate {
-            Some(selected_candidate) => {
-                if let Err(e) = state.vote(&selected_candidate, &blockchain_addr) {
-                    set_error.set(Some(format!("Failed to vote: {e}")));
-                }
+    view! {
+        <button on:click=move |_| {
+            if candidate.get().is_some() {
+                Candidate::delete(&user.read(), &blockchain.read());
             }
-            None => set_error.set(Some("Candidate not selected".to_owned())),
-        }
-    };
+            set_candidate.set(None);
+        }>"DEBUG: Reset candidate"</button>
 
-    view! {
-        <label>
-            <form on:submit=on_submit>
-                <label>
-                    "Enter the URL of the blockchain:"
-                    <input
-                        type="text"
-                        node_ref=blockchain_addr_ref
-                        name="blockchain_url"
-                        placeholder="Paste the URL of the blockchain here"
-                    />
-                </label>
-                <label>
-                    "Select the ID of the candidate for whom you wish to vote for"
-                    <select
-                        on:change=move |ev| {
-                            set_candidate.set(Some(event_target_value(&ev)));
-                        }
-                        prop:value=move || candidate.get()
-                    >
-                        <Config />
-                    </select> <button type="submit">Vote</button>
-                </label>
-            </form>
-        </label>
-        <Show when=move || get_error.get().is_some() fallback=|| ()>
-            <p class="error">{get_error.get().expect("Error to be some")}</p>
+        <button on:click=move |_| {
+            blockchain.set(String::new());
+        }>"Back to blockchain select"</button>
+
+        <Show when=move || !access_tokens.read().is_complete() fallback=|| ()>
+            <validation::Validation
+                user=user
+                blockchain=blockchain.read_only()
+                access_tokens=access_tokens
+            />
         </Show>
-    }
-}
-
-#[component]
-fn Config() -> impl IntoView {
-    // TODO For now candidate config is hardcoded:
-    view! {
-        <option value="0">"First Candidate"</option>
-        <option value="1">"Second Candidate"</option>
-        <option value="2">"Third Candidate"</option>
+        <Show
+            when=move || access_tokens.read().is_complete() && candidate.get().is_none()
+            fallback=|| ()
+        >
+            <candidate_selection::CandidateSelection
+                user=user
+                blockchain=blockchain.read_only()
+                access_tokens=access_tokens.read_only()
+                set_candidate=set_candidate
+            />
+        </Show>
+        <Show when=move || candidate.get().is_some() fallback=|| ()>
+            <verification::Verification candidate=candidate />
+        </Show>
     }
 }

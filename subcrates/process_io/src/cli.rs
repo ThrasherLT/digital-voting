@@ -3,7 +3,7 @@
 use rustyline::{
     completion::FilenameCompleter,
     error::ReadlineError,
-    highlight::{Highlighter, MatchingBracketHighlighter},
+    highlight::{CmdKind, Highlighter, MatchingBracketHighlighter},
     hint::HistoryHinter,
     history::DefaultHistory,
     validate::MatchingBracketValidator,
@@ -154,7 +154,7 @@ impl Highlighter for MyHelper {
         self.highlighter.highlight(line, pos)
     }
 
-    fn highlight_char(&self, line: &str, pos: usize, forced: bool) -> bool {
-        self.highlighter.highlight_char(line, pos, forced)
+    fn highlight_char(&self, line: &str, pos: usize, kind: CmdKind) -> bool {
+        self.highlighter.highlight_char(line, pos, kind)
     }
 }

@@ -1,13 +1,15 @@
 //! File containing code which handles the user settings for the browser extension.
 
-use crate::state::State;
+use crate::states::user::User;
 use leptos::{
-    component, create_signal, expect_context, view, IntoView, Show, SignalGet, SignalSet,
+    component,
+    prelude::{signal, ElementChild, Get, OnAttribute, RwSignal, Set, Show, Update},
+    view, IntoView,
 };
 
 #[component]
-pub fn SettingsPanel() -> impl IntoView {
-    let (show_settings, set_show_settings) = create_signal(false);
+pub fn SettingsPanel(user: RwSignal<Option<User>>) -> impl IntoView {
+    let (show_settings, set_show_settings) = signal(false);
 
     view! {
         <Show
@@ -23,19 +25,20 @@ pub fn SettingsPanel() -> impl IntoView {
             <button on:click=move |_| {
                 set_show_settings.set(false);
             }>"Hide settings"</button>
-            <User />
+            <Show when=move || user.get().is_some() fallback=move || ()>
+                <User user=user />
+            </Show>
         </Show>
     }
 }
 
 #[component]
-pub fn User() -> impl IntoView {
-    let (double_check, set_double_check) = create_signal(false);
+fn User(user: RwSignal<Option<User>>) -> impl IntoView {
+    let (double_check, set_double_check) = signal(false);
 
     view! {
         <button on:click=move |_| {
-            let mut state = expect_context::<State>();
-            state.logout();
+            user.set(None);
         }>"Logout"</button>
         <Show
             when=move || double_check.get()
@@ -52,8 +55,10 @@ pub fn User() -> impl IntoView {
             }>"Delete User"</button>
             <p>"Are you sure? This cannot be undone!"</p>
             <button on:click=move |_| {
-                let mut state = expect_context::<State>();
-                state.delete_user();
+                user.update(|user| {
+                    let mut user = user.take();
+                    user.map(|mut user| user.delete());
+                });
             }>"Yes, I'm sure"</button>
             <button on:click=move |_| {
                 set_double_check.set(false);

@@ -15,6 +15,7 @@ pub struct Candidate {
     pub id: CandidateId,
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct BlockchainConfig {
     pub authorities: Vec<Authority>,

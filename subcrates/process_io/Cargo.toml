@@ -10,10 +10,10 @@ license = "Apache-2.0"
 repository = "https://github.com/ThrasherLT/digital-voting"
 
 [dependencies]
-rustyline = { version = "14.0.0", features = ["derive"] }
+rustyline = { version = "15.0.0", features = ["derive"] }
 shellwords = "1.1.0"
 tracing-appender = "0.2.3"
 
 tracing-subscriber.workspace = true
-tracing.workspace = true
+tracing = { workspace = true, features = ["max_level_trace", "release_max_level_trace"] }
 thiserror.workspace = true

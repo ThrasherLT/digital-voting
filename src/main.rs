@@ -21,7 +21,7 @@ async fn main() -> Result<()> {
     let state = State::new(blockchain_config);
     trace!("Config loaded");
 
-    let (stop_server, server_handle) = digital_voting::api::server::run(state, args.socket_addr).await?;
+    let (stop_server, server_handle) = digital_voting::api::server::run(state, args.socket_addr)?;
     if !args.no_cli {
         let _cli_handle: JoinHandle<anyhow::Result<()>> = tokio::task::spawn_blocking(|| {
             let mut stdio_reader = StdioReader::new(PathBuf::from_str("node-cmd-history.txt")?)?;
@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
                     Err(e) => {
                         println!("Quitting: {e:?}");
                         if let Err(()) = stop_server.send(()) {
-                            println!("Server already down")
+                            println!("Server already down");
                         }
                         break Ok(());
                     }

@@ -71,7 +71,6 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 # output a note when they are encountered.
 # TODO make sure these are figured out before any serious release:
 ignore = [
-    { id = "RUSTSEC-2024-0370", reason = "`leptos` depends on `proc-macro-error`, so will have to wait for `leptos` to be updated" },
     { id = "RUSTSEC-2023-0071", reason = "The Marvin Attack only affects deterministicly padded RSA, while this crate uses PSS under the hood" },
     #"RUSTSEC-0000-0000",
     #{ id = "RUSTSEC-0000-0000", reason = "you can specify a reason the advisory is ignored" },
@@ -95,13 +94,13 @@ allow = [
     "MIT",
     "Apache-2.0",
     "ISC",
-    "Unicode-DFS-2016",
     "OpenSSL",
     "Apache-2.0 WITH LLVM-exception",
     "BSD-3-Clause",
     "BSD-2-Clause",
     "BSL-1.0",
     "Zlib",
+    "Unicode-3.0"
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the

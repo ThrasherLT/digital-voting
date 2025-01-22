@@ -4,6 +4,11 @@ use tracing::level_filters::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard as TracingWorkerGuard;
 
 /// Start a logger that writes traces to a file without blocking.
+///
+/// # Errors
+///
+/// If the path to the log file is invalid.
+/// If initializing the `tracing_subscriber` fails.
 pub fn start_logger(log_path: &Path) -> std::io::Result<TracingWorkerGuard> {
     if let Some(parent) = log_path.parent() {
         std::fs::create_dir_all(parent)?;

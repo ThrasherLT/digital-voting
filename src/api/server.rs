@@ -4,17 +4,19 @@ use actix_cors::Cors;
 use actix_web::{get, post, routes, web, App, HttpResponse, HttpServer, Responder};
 use anyhow::{bail, Result};
 use tokio::{select, sync::oneshot, task::JoinHandle};
-use tracing::{info, trace};
+use tracing::info;
 use tracing_actix_web::TracingLogger;
 
 use protocol::vote::Vote;
 
 use crate::state::State;
 
-pub async fn run(state: State, addr: SocketAddr) -> Result<(oneshot::Sender<()>, JoinHandle<Result<(), anyhow::Error>>)> {    
+pub type Handle = (oneshot::Sender<()>, JoinHandle<Result<(), anyhow::Error>>);
+
+pub fn run(state: State, addr: SocketAddr) -> Result<Handle> {
     let (tx, rx) = oneshot::channel::<()>();
     let state = web::Data::new(state);
-    println!("starting HTTP server at {}", addr);
+    println!("starting HTTP server at {addr}");
 
     let handle = tokio::spawn(async move {
         let server = HttpServer::new(move || {

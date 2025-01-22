@@ -80,7 +80,7 @@ impl AuthorityConfig {
             .create(true)
             .truncate(true)
             .open(path)?
-            .write(&serde_json::to_vec(self)?)?;
+            .write_all(&serde_json::to_vec(self)?)?;
 
         Ok(())
     }
@@ -109,7 +109,7 @@ fn setup_blind_signer(
         std::fs::create_dir_all(parent)?;
     }
     if new_keys {
-        if let Err(err) = std::fs::remove_file(&authority_config_path) {
+        if let Err(err) = std::fs::remove_file(authority_config_path) {
             // It's not an error if the file actually doesn't exist, since we're deleting it anyway.
             if err.kind() != std::io::ErrorKind::NotFound {
                 anyhow::bail!("Failed to delete old blind signer cfg file: {}", err);
@@ -117,9 +117,9 @@ fn setup_blind_signer(
         }
     }
 
-    match load_blind_signer_from_fs(&authority_config_path) {
+    match load_blind_signer_from_fs(authority_config_path) {
         Ok(blind_signer) => Ok(blind_signer),
-        Err(_) => Ok(new_blind_signer(&authority_config_path)?),
+        Err(_) => Ok(new_blind_signer(authority_config_path)?),
     }
 }
 
@@ -142,7 +142,7 @@ async fn main() -> Result<()> {
     match (args.no_cli, args.no_http_server) {
         (true, true) => bail!("Authority needs at least CLI interface or HTTP server to run"),
         (true, false) => {
-            let (_stop_server, handle) = run_server(blind_signer, args.addr)?;
+            let (_stop_server, handle) = run_server(blind_signer, args.addr);
             handle.await??;
         }
         (false, true) => run_cli(
@@ -150,7 +150,7 @@ async fn main() -> Result<()> {
             args.data_path.join("authority-cmd-history.txt"),
         )?,
         (false, false) => {
-            let _server_shutdown = run_server(blind_signer.clone(), args.addr)?;
+            let _server_shutdown = run_server(blind_signer.clone(), args.addr);
             run_cli(
                 &blind_signer,
                 args.data_path.join("authority-cmd-history.txt"),
@@ -193,10 +193,9 @@ fn run_cli(blind_signer: &blind_sign::BlindSigner, cmd_history_path: PathBuf) ->
     Ok(())
 }
 
-fn run_server(
-    blind_signer: Arc<blind_sign::BlindSigner>,
-    addr: std::net::SocketAddr,
-) -> Result<(oneshot::Sender<()>, JoinHandle<Result<(), anyhow::Error>>)> {
+type Handle = (oneshot::Sender<()>, JoinHandle<Result<(), anyhow::Error>>);
+
+fn run_server(blind_signer: Arc<blind_sign::BlindSigner>, addr: std::net::SocketAddr) -> Handle {
     let (tx, rx) = oneshot::channel::<()>();
 
     let handle = tokio::spawn(async move {
@@ -205,6 +204,14 @@ fn run_server(
                 .app_data(web::Data::new(AppState {
                     blind_signer: blind_signer.clone(),
                 }))
+                .wrap(
+                    actix_cors::Cors::default()
+                        // TODO Probably should be more specific:
+                        .allow_any_origin()
+                        .allow_any_header()
+                        .allowed_methods(vec!["GET", "POST"])
+                        .max_age(3600),
+                )
                 .service(greet)
                 .service(authenticate)
                 .service(get_pkey)
@@ -223,7 +230,7 @@ fn run_server(
         }
     });
 
-    Ok((tx, handle))
+    (tx, handle)
 }
 
 #[routes]
