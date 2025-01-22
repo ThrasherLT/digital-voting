@@ -3,13 +3,16 @@
 use rustyline::{
     completion::FilenameCompleter,
     error::ReadlineError,
-    highlight::{Highlighter, MatchingBracketHighlighter},
+    highlight::{CmdKind, Highlighter, MatchingBracketHighlighter},
     hint::HistoryHinter,
     history::DefaultHistory,
     validate::MatchingBracketValidator,
     Completer, CompletionType, Config, EditMode, Editor, Helper, Hinter, Validator,
 };
-use std::borrow::Cow::{self, Borrowed, Owned};
+use std::{
+    borrow::Cow::{self, Borrowed, Owned},
+    path::PathBuf,
+};
 use thiserror::Error;
 
 // Error type of the CLI module.
@@ -24,6 +27,9 @@ pub enum Error {
     /// There was an error reading while reading the name of the current executable.
     #[error(transparent)]
     MismatchedQuotes(#[from] shellwords::MismatchedQuotes),
+    /// The provided path was invalid.
+    #[error("Invalid path")]
+    Path,
 }
 type Result<T> = std::result::Result<T, Error>;
 
@@ -36,7 +42,9 @@ pub struct StdioReader {
     /// The name of the executable.
     /// Used for adding to the input command, so that `clap` can parse it.
     /// Storing this here to avoid the extra operations needed to retrieve it.
-    exec_name: String,
+    exec_path: String,
+    /// Path to where the command history file will be stored.
+    cmd_history_path: PathBuf,
 }
 
 impl StdioReader {
@@ -49,7 +57,7 @@ impl StdioReader {
     /// # Errors
     ///
     /// If there was an error creating the Editor for Rustyline.
-    pub fn new() -> Result<Self> {
+    pub fn new(cmd_history_path: PathBuf) -> Result<Self> {
         let config = Config::builder()
             .completion_type(CompletionType::List)
             .auto_add_history(true)
@@ -62,13 +70,20 @@ impl StdioReader {
             colored_prompt: String::new(),
             validator: MatchingBracketValidator::new(),
         };
-        let exec_name = std::env::current_exe()?;
-        let exec_name = exec_name.to_string_lossy().to_string();
+        let exec_path = std::env::current_exe()?;
+        let exec_path = exec_path.to_string_lossy().to_string();
         let mut rl = Editor::with_config(config)?;
         rl.set_helper(Some(h));
-        let _ = rl.load_history("node-cmd-history.txt");
+        if let Some(parent) = cmd_history_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let _ = rl.load_history(&cmd_history_path);
 
-        Ok(Self { rl, exec_name })
+        Ok(Self {
+            rl,
+            exec_path,
+            cmd_history_path,
+        })
     }
 
     /// Read a line from stdio. This function blocks until a line is read.
@@ -91,7 +106,7 @@ impl StdioReader {
         let line = self.rl.readline(&prompt)?;
 
         let mut line = shellwords::split(&line)?;
-        line.insert(0, self.exec_name.clone());
+        line.insert(0, self.exec_path.clone());
 
         Ok(line)
     }
@@ -101,7 +116,7 @@ impl Drop for StdioReader {
     /// The command history is saved to a file when the `StdioReader` is dropped.
     /// So `StdioReader` should only really be dropped when the program is exiting.
     fn drop(&mut self) {
-        let _ = self.rl.save_history("node-cmd-history.txt");
+        let _ = self.rl.save_history(&self.cmd_history_path);
     }
 }
 
@@ -139,7 +154,7 @@ impl Highlighter for MyHelper {
         self.highlighter.highlight(line, pos)
     }
 
-    fn highlight_char(&self, line: &str, pos: usize, forced: bool) -> bool {
-        self.highlighter.highlight_char(line, pos, forced)
+    fn highlight_char(&self, line: &str, pos: usize, kind: CmdKind) -> bool {
+        self.highlighter.highlight_char(line, pos, kind)
     }
 }

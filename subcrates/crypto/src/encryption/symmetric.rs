@@ -36,6 +36,7 @@ type Result<T> = std::result::Result<T, Error>;
 const SALT_LEN: usize = 32;
 
 /// Newtype for unique SALT generated for each user and used for deriving salt for encryption key.
+#[derive(Clone)]
 struct Salt([u8; SALT_LEN]);
 
 impl Salt {
@@ -165,6 +166,7 @@ impl AsRef<[u8]> for MetaData {
 }
 
 /// Encryption state structure.
+#[derive(Clone)]
 pub struct Encryption {
     /// The AEAD key used to encrypt and decrypt messages.
     key: aead::LessSafeKey,

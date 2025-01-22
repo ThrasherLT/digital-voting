@@ -2,37 +2,18 @@
 
 use anyhow::Result;
 use codee::string::JsonSerdeCodec;
-use crypto::{
-    encryption::symmetric,
-    signature::{blind_sign, digital_sign},
+use crypto::encryption::symmetric;
+use leptos::{
+    logging::log,
+    prelude::{Get, Set},
 };
-use leptos::{SignalGet, SignalSet};
 use leptos_use::storage::use_local_storage;
-use protocol::candidate_id::CandidateId;
 
-// TODO Add documentation.
+// TODO Update codee version without breaking.
+// TODO Make sure in place encryption doesn't leak keys.
+// TODO Dynamically import this file so that `states` module could be used in a non-wasm environment.
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct KeyStore {
-    pub signer_sk: Option<digital_sign::SecretKey>,
-    pub authority_key: Option<blind_sign::PublicKey>,
-    pub unblinding_secret: Option<blind_sign::UnblindingSecret>,
-    pub access_token: Option<blind_sign::Signature>,
-    pub candidate: Option<CandidateId>,
-}
-
-impl KeyStore {
-    pub fn encrypt(self, encryption: &symmetric::Encryption) -> Result<Storage> {
-        let mut storage = serde_json::to_vec(&self)?;
-        let metadata = encryption.encrypt(&mut storage)?;
-
-        Ok(Storage {
-            metadata,
-            encrypted_bytes: storage,
-        })
-    }
-}
-
+/// Encrypted storage containing metadata and all of the storage related operations.
 #[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Storage {
     metadata: symmetric::MetaData,
@@ -40,34 +21,59 @@ pub struct Storage {
 }
 
 impl Storage {
+    /// Encrypt any serializable struct.
+    pub fn encrypt<T>(encryption: &symmetric::Encryption, to_encrypt: &T) -> Result<Self>
+    where
+        T: serde::Serialize,
+    {
+        let mut storage = serde_json::to_vec(to_encrypt)?;
+        let metadata = encryption.encrypt(&mut storage)?;
+
+        Ok(Self {
+            metadata,
+            encrypted_bytes: storage,
+        })
+    }
+
+    /// Decrypt any deserializable owned struct.
+    pub fn decrypt<T>(self, encryption: &symmetric::Encryption) -> Result<T>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        let mut encrypted_bytes = self.encrypted_bytes.clone();
+        let decrypted_bytes = encryption.decrypt(&mut encrypted_bytes, &self.metadata)?;
+        let decrypted_value: T = serde_json::from_slice(decrypted_bytes)?;
+
+        Ok(decrypted_value)
+    }
+
+    /// Return metadata of the encrypted data.
     pub fn get_metadata(&self) -> &symmetric::MetaData {
         &self.metadata
     }
 
-    pub fn load(username: &str) -> Option<Self> {
-        let (storage, _, _) = use_local_storage::<Option<Storage>, JsonSerdeCodec>(username);
+    /// Load encrypoted data from browser's local storage.
+    pub fn load(storage_key: &str) -> Option<Self> {
+        let (storage, _, _) = use_local_storage::<Option<Storage>, JsonSerdeCodec>(storage_key);
 
         storage.get()
     }
 
-    pub fn save(self, username: &str) {
-        let (_, set_storage, _) = use_local_storage::<Option<Storage>, JsonSerdeCodec>(username);
+    /// Save encrypted data to browser's local storage.
+    pub fn save(self, storage_key: &str) {
+        let (_, set_storage, _) = use_local_storage::<Option<Storage>, JsonSerdeCodec>(storage_key);
         set_storage.set(Some(self));
     }
 
-    pub fn delete(username: &str) {
-        let (_, _, clear) = use_local_storage::<Option<Storage>, JsonSerdeCodec>(username);
+    /// Delete encrypted data from browser's local storage.
+    pub fn delete(storage_key: &str) {
+        let (_, _, clear) = use_local_storage::<Option<Storage>, JsonSerdeCodec>(storage_key);
         // TODO Make sure data doesn't stay in leftover garbage:
         clear();
-    }
 
-    pub fn decrypt(self, encryption: &symmetric::Encryption) -> Result<KeyStore> {
-        // TODO This might be a major hazzard so should rethink the whole decryption in place thing:
-        // Cloning to avoid decrypting in storage.
-        let mut encrypted_bytes = self.encrypted_bytes.clone();
-        let decrypted = encryption.decrypt(&mut encrypted_bytes, &self.metadata)?;
-        let key_store: KeyStore = serde_json::from_slice(decrypted)?;
-
-        Ok(key_store)
+        // TODO Figure out why this workaround is necessary:
+        if let Some(_) = Self::load(storage_key) {
+            log!("Known bug: local storage deletion failed!");
+        }
     }
 }

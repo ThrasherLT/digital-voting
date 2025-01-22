@@ -1,22 +1,22 @@
-//! This is the main entry point of the client for the whole blockchain.
-//! The client is implemented as a browser extension, but may be conveniently
-//! build into a website for quick development and testing with hot reloading.
-//! The browser extension had been set up to work with manifest version 3.
-
 use leptos::{
-    component, expect_context, mount_to_body, provide_context, view, IntoView, Show, Signal,
-    SignalWith,
+    component,
+    mount::mount_to_body,
+    prelude::{ElementChild, Read, RwSignal, Show, Signal},
+    view, IntoView,
 };
+use states::user::User;
 
 mod authentication;
+mod blockchain_selection;
+mod candidate_selection;
+mod fetch;
 mod settings;
-mod state;
+mod states;
 mod storage;
 mod utils;
 mod validation;
+mod verification;
 mod vote;
-
-use state::{State, Status};
 
 // Configuration for wasm-bindgen-test to run tests in browser.
 #[cfg(test)]
@@ -40,23 +40,36 @@ fn main() {
 #[must_use]
 #[component]
 pub fn App() -> impl IntoView {
-    provide_context(State::new());
-    let state = expect_context::<State>();
-
-    let status = Signal::derive(move || state.get_status());
+    let blockchain = RwSignal::new(String::new());
+    let user_state = RwSignal::new(Option::<User>::None);
+    let get_user = Signal::derive(move || {
+        user_state
+            .read_only()
+            .read()
+            .as_ref()
+            .expect("User to have existed by now")
+            .to_owned()
+    });
 
     view! {
-        <Show when=move || status.with(|status| matches!(status, Status::LoggedOut)) fallback=|| ()>
-            <authentication::User />
+        <h3>"Untitled Voting System"</h3>
+        <Show when=move || user_state.read().is_none() fallback=|| ()>
+            <authentication::Authentication user_state=user_state />
         </Show>
-        <Show when=move || status.with(|status| { *status > Status::LoggedOut }) fallback=|| ()>
-            <settings::SettingsPanel />
+        <Show when=move || user_state.read().is_some() fallback=|| ()>
+            <settings::SettingsPanel user=user_state />
         </Show>
-        <Show when=move || status.with(|status| matches!(status, Status::LoggedIn)) fallback=|| ()>
-            <validation::ValidateVoter />
+        <Show
+            when=move || user_state.read().is_some() && blockchain.read().is_empty()
+            fallback=|| ()
+        >
+            <blockchain_selection::SelectBlockchain
+                user=user_state
+                set_blockchain=blockchain.write_only()
+            />
         </Show>
-        <Show when=move || status.with(|status| matches!(status, Status::Validated)) fallback=|| ()>
-            <vote::Cast />
+        <Show when=move || !blockchain.read().is_empty() fallback=|| ()>
+            <vote::Vote user=get_user blockchain=blockchain />
         </Show>
     }
 }

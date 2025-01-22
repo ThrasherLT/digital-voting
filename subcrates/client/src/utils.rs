@@ -1,11 +1,15 @@
 //! File containing common util code.
 
-use leptos::{component, view, IntoView, Show, Signal, SignalGet, SignalWith};
+use leptos::{
+    component,
+    prelude::{ElementChild, Get, OnAttribute, ReadSignal, Show, With},
+    view, IntoView,
+};
 use leptos_use::{use_clipboard, UseClipboardReturn};
 
 #[allow(non_snake_case)]
 #[component]
-pub fn Copyable(value: Signal<Option<String>>) -> impl IntoView {
+pub fn Copyable(value: ReadSignal<Option<String>>) -> impl IntoView {
     let UseClipboardReturn {
         is_supported,
         copied,
@@ -28,6 +32,3 @@ pub fn Copyable(value: Signal<Option<String>>) -> impl IntoView {
         </Show>
     }
 }
-
-// TODO leptos_use doesn't currently really support creating a paste button, but it shouldn't be too
-// complicated to either create a PR for it or create it here locally.

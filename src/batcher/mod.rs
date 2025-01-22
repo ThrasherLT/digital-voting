@@ -10,8 +10,6 @@ use tokio::sync::{
     Notify,
 };
 
-use protocol::timestamp::Timestamp;
-
 /// The Batcher instance itself holding the context for batching and the batched items.
 /// The intended way to add items to the batcher is through the Sender returned by the new function.
 /// This is done so that a single Batcher instance shouldn't be shared between multiple threads.
@@ -24,7 +22,7 @@ pub struct Batcher<T> {
     /// full batch had not yet been accumulated.
     batch_time_interval: Duration,
     /// Variable to track when the next batch should be returned.
-    next_batch_time: Timestamp,
+    next_batch_time: chrono::DateTime<chrono::Utc>,
     /// Notify instance to notify the batcher that the batch is full and ready to be
     /// returned without waiting for the `batch_time_interval`.
     batch_ready_notify: Arc<Notify>,
