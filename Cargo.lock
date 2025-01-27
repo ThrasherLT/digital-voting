@@ -594,7 +594,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
- "codee",
+ "codee 0.3.0",
  "console_error_panic_hook",
  "crypto",
  "futures",
@@ -630,6 +630,17 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "codee"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f18d705321923b1a9358e3fc3c57c3b50171196827fc7f5f10b053242aca627"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.11",
 ]
 
 [[package]]
@@ -1874,7 +1885,7 @@ checksum = "e63ce77018c615075541d944d678853b5bb40c79510e39edf695cadb9b128e13"
 dependencies = [
  "cfg-if",
  "chrono",
- "codee",
+ "codee 0.2.0",
  "default-struct-builder",
  "js-sys",
  "lazy_static",
@@ -1965,7 +1976,7 @@ checksum = "18caffe32c245ddb35697edd898ccb3393efce67672a707a14eebd0db2e8249a"
 dependencies = [
  "any_spawner",
  "base64",
- "codee",
+ "codee 0.2.0",
  "futures",
  "hydration_context",
  "or_poisoned",
