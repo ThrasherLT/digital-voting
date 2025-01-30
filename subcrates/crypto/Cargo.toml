@@ -13,7 +13,7 @@ repository = "https://github.com/ThrasherLT/digital-voting"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-rand = "0.8.5"
+rand = "0.9.0"
 blind-rsa-signatures = "0.15.1"
 
 ring = { workspace = true, features = ["wasm32_unknown_unknown_js"] }
