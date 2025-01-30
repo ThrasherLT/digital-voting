@@ -1,10 +1,8 @@
 //! This is a custom implementation of a Merkle Tree, used in set membership ZKPs.
 //! Other crates were too over bloated and not flexible enough.
 
-use thiserror::Error;
-
 /// Error type for Merkle Tree operations.
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
     /// The entered element index was larger than there are elements in the tree.
     #[error("Specified element is out of bounds for this Merkle Tree {}/{}", .0, .1)]

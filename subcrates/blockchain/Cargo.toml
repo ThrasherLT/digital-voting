@@ -1,0 +1,26 @@
+[package]
+name = "blockchain"
+version = "0.1.0"
+edition = "2021"
+description = """
+Generic blockchain code
+"""
+publish = false
+license = "Apache-2.0"
+repository = "https://github.com/ThrasherLT/digital-voting"
+
+[dependencies]
+digest = "0.10.7"
+blake3 = { version = "1.5.5", features = ["traits-preview"] }
+redb = "2.4.0"
+
+thiserror.workspace = true
+chrono.workspace = true
+serde.workspace = true
+
+crypto.workspace = true
+protocol.workspace = true
+bincode.workspace = true
+
+[dev-dependencies]
+tempfile = "3.16.0"
