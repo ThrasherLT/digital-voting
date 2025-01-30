@@ -66,5 +66,11 @@ protocol.workspace = true
 process_io.workspace = true
 blockchain.workspace = true
 
+# TODO Remove this:
+# This is so that `udeps` doesn't complain about blockchain subcrate not being used yet,
+# but the various CI tools can still check it.
+[package.metadata.cargo-udeps.ignore]
+normal = [ "blockchain" ]
+
 [profile.release]
 lto = true
