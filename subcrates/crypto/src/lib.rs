@@ -1,5 +1,6 @@
 pub mod commitment;
 pub mod encryption;
+pub mod hash_storage;
 pub mod merkle;
 pub mod signature;
 pub(crate) mod utils;
