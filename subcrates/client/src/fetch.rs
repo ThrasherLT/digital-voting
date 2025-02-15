@@ -3,16 +3,16 @@ use std::{pin::pin, time::Duration};
 use anyhow::{anyhow, bail, Result};
 use futures::future::{select, Either};
 use leptos::logging::log;
-use protocol::{config::BlockchainConfig, vote::Vote};
+use protocol::{config::ElectionConfig, vote::Vote};
 use reqwasm::http::Response;
 
-pub async fn blockchain_config(addr: String, timeout: Duration) -> Result<BlockchainConfig> {
+pub async fn blockchain_config(addr: String, timeout: Duration) -> Result<ElectionConfig> {
     let addr = format!("{addr}/config");
     let response = get(&addr, timeout).await?;
     if response.status() != 200 {
         bail!("Error code {}", response.status());
     }
-    let config: BlockchainConfig = response.json().await?;
+    let config: ElectionConfig = response.json().await?;
 
     Ok(config)
 }

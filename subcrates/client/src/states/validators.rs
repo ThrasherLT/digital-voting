@@ -1,7 +1,7 @@
 use anyhow::{anyhow, bail, Result};
 
 use crypto::signature::{blind_sign, digital_sign};
-use protocol::config::BlockchainConfig;
+use protocol::config::ElectionConfig;
 
 use crate::{states::user::User, storage::Storage};
 
@@ -29,7 +29,7 @@ impl Validators {
     }
 
     pub fn new(
-        blockchain_config: &BlockchainConfig,
+        blockchain_config: &ElectionConfig,
         signer_pk: digital_sign::PublicKey,
         user: &User,
         blockchain: &str,
@@ -55,11 +55,7 @@ impl Validators {
         Ok(validators)
     }
 
-    pub fn load(
-        blockchain_config: &BlockchainConfig,
-        user: &User,
-        blockchain: &str,
-    ) -> Result<Self> {
+    pub fn load(blockchain_config: &ElectionConfig, user: &User, blockchain: &str) -> Result<Self> {
         let validators_storage = Storage::load(&Self::storage_key(&user.username, blockchain))
             .ok_or(anyhow!("User or password are incorrect"))?;
         let validators_storage: ValidatorsStorage = validators_storage.decrypt(&user.encryption)?;

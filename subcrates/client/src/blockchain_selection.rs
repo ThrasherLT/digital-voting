@@ -10,14 +10,14 @@ use leptos::{
     task::spawn_local,
     view, IntoView,
 };
-use protocol::config::BlockchainConfig;
+use protocol::config::ElectionConfig;
 
 use crate::{fetch, states::user::User};
 
 fn new_blockchain(
     new_blockchain_addr: String,
     set_user: RwSignal<Option<User>>,
-    blockchain_config: BlockchainConfig,
+    blockchain_config: ElectionConfig,
 ) -> Result<()> {
     let mut res = Ok(());
 
