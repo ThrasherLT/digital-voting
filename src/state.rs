@@ -1,17 +1,17 @@
-use protocol::config::BlockchainConfig;
+use protocol::config::ElectionConfig;
 
 pub struct State {
-    blockchain_config: BlockchainConfig,
+    blockchain_config: ElectionConfig,
 }
 
 impl State {
     #[must_use]
-    pub fn new(blockchain_config: BlockchainConfig) -> Self {
+    pub fn new(blockchain_config: ElectionConfig) -> Self {
         Self { blockchain_config }
     }
 
     #[must_use]
-    pub fn get_blockchain_config(&self) -> &BlockchainConfig {
+    pub fn get_blockchain_config(&self) -> &ElectionConfig {
         &self.blockchain_config
     }
 }

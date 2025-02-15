@@ -1,7 +1,7 @@
 use anyhow::{anyhow, bail, Result};
 
 use crypto::encryption::symmetric;
-use protocol::config::BlockchainConfig;
+use protocol::config::ElectionConfig;
 
 use crate::storage::Storage;
 
@@ -76,7 +76,7 @@ impl User {
     pub fn add_blockchain(
         &mut self,
         blockchain: String,
-        blockchain_config: BlockchainConfig,
+        blockchain_config: ElectionConfig,
     ) -> Result<()> {
         if self.blockchains.contains(&blockchain) {
             bail!("Blockchain already added");

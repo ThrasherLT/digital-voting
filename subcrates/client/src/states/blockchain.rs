@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use protocol::config::BlockchainConfig;
+use protocol::config::ElectionConfig;
 
 use super::{
     access_tokens::AccessTokens, config::Config, signature::Signature, user::User,
@@ -18,7 +18,7 @@ pub fn delete_from_storage(blockchain_addr: &str, user: &mut User) {
 pub fn create_in_storage(
     blockchain_addr: String,
     user: &mut User,
-    blockchain_config: BlockchainConfig,
+    blockchain_config: ElectionConfig,
 ) -> Result<()> {
     let signature = Signature::new(&user, &blockchain_addr)?;
     Validators::new(

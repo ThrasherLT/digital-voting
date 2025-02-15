@@ -1,10 +1,10 @@
 use std::path::Path;
 
 use anyhow::Result;
-use protocol::config::BlockchainConfig;
+use protocol::config::ElectionConfig;
 use tokio::fs;
 
-pub async fn load_from_file(path: &Path) -> Result<BlockchainConfig> {
+pub async fn load_from_file(path: &Path) -> Result<ElectionConfig> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }

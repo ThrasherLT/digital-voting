@@ -1,12 +1,12 @@
 use anyhow::{anyhow, Result};
 
-use protocol::config::BlockchainConfig;
+use protocol::config::ElectionConfig;
 
 use crate::{states::user::User, storage::Storage};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
-    pub blockchain_config: BlockchainConfig,
+    pub blockchain_config: ElectionConfig,
 }
 
 impl Config {
@@ -14,7 +14,7 @@ impl Config {
         format!("{}/{}/config", username, blockchain)
     }
 
-    pub fn save(blockchain_config: BlockchainConfig, user: &User, blockchain: &str) -> Result<()> {
+    pub fn save(blockchain_config: ElectionConfig, user: &User, blockchain: &str) -> Result<()> {
         let config = Config { blockchain_config };
 
         Storage::encrypt(&user.encryption, &config)?
