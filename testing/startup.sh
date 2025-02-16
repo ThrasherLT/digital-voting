@@ -2,6 +2,8 @@
 
 # This is the script which is used to initialize the containers.
 
+DATA_DIR="data/"
+
 # Docker does not expose the service name as an environment variable.
 # So we have to retrieve it through the docker.socket API.
 export NAME=\
@@ -15,11 +17,9 @@ $(curl -X GET --unix-socket /var/run/docker.sock -s "http://v1.43/containers/$HO
 | jq -r --arg app_port "$APP_PORT" '.NetworkSettings.Ports[$app_port + "/tcp"][0].HostPort' \
 | sed "s/['\"/\\/]//g")
 
-mkdir -p /data/$NAME
-cd /data/$NAME
-echo "$PORT" > port
-if [ "$APP" == "node" ]; then
-    cp ../blockchain-config.json .
-fi
+# Save port number to file.
+mkdir -p /$DATA_DIR/$NAME
+echo "$PORT" > $DATA_DIR/$NAME/port
 
-/exec/debug/${APP} --data-path .
+# Run the authority application.
+/exec/debug/${APP} --data-path $DATA_DIR/$NAME

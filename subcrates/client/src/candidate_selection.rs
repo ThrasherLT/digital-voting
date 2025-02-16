@@ -71,7 +71,7 @@ pub fn CandidateSelection(
     let config =
         Config::load(&user.read(), &blockchain.read()).expect("Config to exist at this point");
     let candidates = config
-        .blockchain_config
+        .election_config
         .candidates
         .into_iter()
         .map(|candidate| {

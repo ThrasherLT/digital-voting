@@ -73,15 +73,12 @@ impl User {
     }
 
     /// Add a blockchain address to the user.
-    pub fn add_blockchain(
-        &mut self,
-        blockchain: String,
-        blockchain_config: ElectionConfig,
-    ) -> Result<()> {
-        if self.blockchains.contains(&blockchain) {
+    pub fn add_blockchain(&mut self, election_config: ElectionConfig) -> Result<()> {
+        let election = election_config.name.to_string();
+        if self.blockchains.contains(&election) {
             bail!("Blockchain already added");
         }
-        self.blockchains.push(blockchain.clone());
+        self.blockchains.push(election.clone());
         Storage::encrypt(
             &self.encryption,
             &UserBlockchains {
@@ -90,7 +87,7 @@ impl User {
         )?
         .save(&self.username);
 
-        blockchain::create_in_storage(blockchain, self, blockchain_config)
+        blockchain::create_in_storage(election, self, election_config)
     }
 
     /// Remove a blockchain address from the user.

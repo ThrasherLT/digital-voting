@@ -100,7 +100,7 @@ impl StdioReader {
     ///
     /// If there was an error reading from stdio.
     pub fn read_stdio_blocking(&mut self) -> Result<Vec<String>> {
-        let prompt = "Node$ ".to_string();
+        let prompt = "$ ".to_string();
         self.rl.helper_mut().expect("No helper").colored_prompt =
             format!("\x1b[1;32m{prompt}\x1b[0m");
         let line = self.rl.readline(&prompt)?;

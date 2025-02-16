@@ -72,7 +72,7 @@ pub async fn vote(vote: web::Json<Vote>) -> impl Responder {
 
 #[get("/config")]
 pub async fn config(state: web::Data<State>) -> impl Responder {
-    if let Ok(json) = serde_json::to_string(state.get_blockchain_config()) {
+    if let Ok(json) = serde_json::to_string(state.get_election_config()) {
         HttpResponse::Ok().body(json)
     } else {
         HttpResponse::InternalServerError().body("Failed to get config")

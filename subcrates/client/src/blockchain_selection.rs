@@ -14,17 +14,13 @@ use protocol::config::ElectionConfig;
 
 use crate::{fetch, states::user::User};
 
-fn new_blockchain(
-    new_blockchain_addr: String,
-    set_user: RwSignal<Option<User>>,
-    blockchain_config: ElectionConfig,
-) -> Result<()> {
+fn new_blockchain(set_user: RwSignal<Option<User>>, election_config: ElectionConfig) -> Result<()> {
     let mut res = Ok(());
 
     set_user.update(|user| {
         if let Some(user) = user {
-            if let Err(e) = user.add_blockchain(new_blockchain_addr.clone(), blockchain_config) {
-                res = Err(anyhow!(format!("Error fetching blockchain configs: {e}")));
+            if let Err(e) = user.add_blockchain(election_config) {
+                res = Err(anyhow!(format!("Error fetching election configs: {e}")));
             }
         } else {
             res = Err(anyhow!("Internal user error"));
@@ -66,17 +62,16 @@ fn NewBlockchain(user: RwSignal<Option<User>>) -> impl IntoView {
             .value();
 
         spawn_local(async move {
-            match fetch::blockchain_config(new_blockchain_addr.clone(), Duration::from_secs(5))
-                .await
+            match fetch::election_config(new_blockchain_addr.clone(), Duration::from_secs(5)).await
             {
-                Ok(blockchain_config) => {
-                    if let Err(e) = new_blockchain(new_blockchain_addr, user, blockchain_config) {
+                Ok(election_config) => {
+                    if let Err(e) = new_blockchain(user, election_config) {
                         set_error.set(Some(format!("Error setting up new blockchain: {e}")))
                     } else {
                         set_error.set(None);
                     }
                 }
-                Err(e) => set_error.set(Some(format!("Error fetching blockchain configs: {e}"))),
+                Err(e) => set_error.set(Some(format!("Error fetching election configs: {e}"))),
             };
         })
     };
