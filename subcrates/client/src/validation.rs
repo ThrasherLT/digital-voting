@@ -33,7 +33,7 @@ pub fn Validation(
         signal(Signature::load(&user.read(), &blockchain.read()).expect("Signature to be loaded"));
 
     let (validators, _) = signal(
-        Validators::load(&config.blockchain_config, &user.read(), &blockchain.read())
+        Validators::load(&config.election_config, &user.read(), &blockchain.read())
             .expect("Validators to be loaded"),
     );
 

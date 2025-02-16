@@ -29,7 +29,7 @@ impl Validators {
     }
 
     pub fn new(
-        blockchain_config: &ElectionConfig,
+        election_config: &ElectionConfig,
         signer_pk: digital_sign::PublicKey,
         user: &User,
         blockchain: &str,
@@ -37,7 +37,7 @@ impl Validators {
         let mut validators = Self(Vec::new());
         let mut validators_storage = ValidatorsStorage::default();
 
-        for auth in &blockchain_config.authorities {
+        for auth in &election_config.authorities {
             let (blinded_pk, unblinder) =
                 blind_sign::Blinder::new(auth.authority_key.clone())?.blind(&signer_pk)?;
             validators_storage.0.push(ValidatorStorage {
@@ -55,7 +55,7 @@ impl Validators {
         Ok(validators)
     }
 
-    pub fn load(blockchain_config: &ElectionConfig, user: &User, blockchain: &str) -> Result<Self> {
+    pub fn load(election_config: &ElectionConfig, user: &User, blockchain: &str) -> Result<Self> {
         let validators_storage = Storage::load(&Self::storage_key(&user.username, blockchain))
             .ok_or(anyhow!("User or password are incorrect"))?;
         let validators_storage: ValidatorsStorage = validators_storage.decrypt(&user.encryption)?;
@@ -66,7 +66,7 @@ impl Validators {
             validators.0.push(Validator {
                 blinded_pk: validator_storage.blinded_pk.clone(),
                 unblinder: blind_sign::Unblinder::from_pk_and_secret(
-                    blockchain_config.authorities[i].authority_key.clone(),
+                    election_config.authorities[i].authority_key.clone(),
                     validator_storage.unblinding_secret.clone(),
                 )?,
             });

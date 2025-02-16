@@ -6,7 +6,7 @@ use crate::{states::user::User, storage::Storage};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
-    pub blockchain_config: ElectionConfig,
+    pub election_config: ElectionConfig,
 }
 
 impl Config {
@@ -14,8 +14,8 @@ impl Config {
         format!("{}/{}/config", username, blockchain)
     }
 
-    pub fn save(blockchain_config: ElectionConfig, user: &User, blockchain: &str) -> Result<()> {
-        let config = Config { blockchain_config };
+    pub fn save(election_config: ElectionConfig, user: &User, blockchain: &str) -> Result<()> {
+        let config = Config { election_config };
 
         Storage::encrypt(&user.encryption, &config)?
             .save(&Self::storage_key(&user.username, blockchain));
@@ -24,14 +24,14 @@ impl Config {
 
     pub fn load(user: &User, blockchain: &str) -> Result<Self> {
         let config_storage = Storage::load(&Self::storage_key(&user.username, blockchain))
-            .ok_or(anyhow!("Failed to load blockchain config"))?;
+            .ok_or(anyhow!("Failed to load election config"))?;
         let config: Self = config_storage.decrypt(&user.encryption)?;
 
         Ok(config)
     }
 
     pub fn get_authorities(&self) -> Vec<String> {
-        self.blockchain_config
+        self.election_config
             .authorities
             .iter()
             .map(|auth| auth.addr.clone())

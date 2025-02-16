@@ -6,7 +6,7 @@ use leptos::logging::log;
 use protocol::{config::ElectionConfig, vote::Vote};
 use reqwasm::http::Response;
 
-pub async fn blockchain_config(addr: String, timeout: Duration) -> Result<ElectionConfig> {
+pub async fn election_config(addr: String, timeout: Duration) -> Result<ElectionConfig> {
     let addr = format!("{addr}/config");
     let response = get(&addr, timeout).await?;
     if response.status() != 200 {

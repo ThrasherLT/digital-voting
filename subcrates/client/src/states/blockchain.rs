@@ -18,16 +18,16 @@ pub fn delete_from_storage(blockchain_addr: &str, user: &mut User) {
 pub fn create_in_storage(
     blockchain_addr: String,
     user: &mut User,
-    blockchain_config: ElectionConfig,
+    election_config: ElectionConfig,
 ) -> Result<()> {
     let signature = Signature::new(&user, &blockchain_addr)?;
     Validators::new(
-        &blockchain_config,
+        &election_config,
         signature.signer.get_public_key(),
         &user,
         &blockchain_addr,
     )?;
-    let _ = AccessTokens::new(&user, &blockchain_addr, blockchain_config.authorities.len())?;
-    Config::save(blockchain_config, &user, &blockchain_addr)
+    let _ = AccessTokens::new(&user, &blockchain_addr, election_config.authorities.len())?;
+    Config::save(election_config, &user, &blockchain_addr)
     // TODO Add candidate too.
 }

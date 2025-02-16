@@ -3,8 +3,6 @@ version: '3.8'
 x-common: &common
     build:
       context: .
-    ports:
-      - "${HOST_PORT}:${APP_PORT}"
     volumes:
       - ./data:/data:rw
       - ./../target/:/exec:ro
@@ -23,16 +21,12 @@ x-common: &common
 
 services:
   authority:
-    deploy:
-      replicas: 3
     environment:
       - APP=authority
       - APP_PORT=${APP_PORT}
     <<: *common
 
   node:
-    deploy:
-      replicas: 5
     environment:
       - APP=node
       - APP_PORT=${APP_PORT}

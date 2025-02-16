@@ -15,10 +15,10 @@ use tracing::trace;
 async fn main() -> Result<()> {
     let args = Args::parse();
     let _tracing_worker_guard = start_logger(&args.data_path.join("node.log"))?;
-    let blockchain_config = config::load_from_file(&args.data_path.join("blockchain-config.json"))
+    let election_config = config::load_from_file(&args.data_path.join("election-config.json"))
         .await
-        .map_err(|e| anyhow!("Failed to load blockchain config: {e}"))?;
-    let state = State::new(blockchain_config);
+        .map_err(|e| anyhow!("Failed to load election config: {e}"))?;
+    let state = State::new(election_config);
     trace!("Config loaded");
 
     let (stop_server, server_handle) = digital_voting::api::server::run(state, args.socket_addr)?;
