@@ -67,6 +67,10 @@ Some parts of the digital election process are considered out of scope:
 A `docker compose` environment is provided to simulate the different actors of the digital election process and the workings in between them.
 A `mock_authority` binary is also being developed alongside this project for assistance with testing.
 
+### Building
+
+Standard `cargo` commands apply, but `trunk` is required for building the `client` and `mock_authority_frontend`.
+
 ## Roadmap
 
 > Note: There are still many features missing and issues present before we reach v1.0.0 and this roadmap moreso describes what is considered out of scope for versions < v1.0.0

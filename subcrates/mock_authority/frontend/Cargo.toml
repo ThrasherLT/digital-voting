@@ -1,0 +1,27 @@
+[package]
+name = "frontend"
+version = "0.1.0"
+edition = "2021"
+description = """
+Frontend for the mock authority
+"""
+publish = false
+license = "Apache-2.0"
+repository = "https://github.com/ThrasherLT/digital-voting"
+
+[dependencies]
+web-sys = "0.3.77"
+
+leptos.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+console_error_panic_hook.workspace = true
+tracing-subscriber-wasm.workspace = true
+anyhow.workspace = true
+reqwasm.workspace = true
+gloo-timers.workspace = true
+futures.workspace = true
+leptos-use.workspace = true
+serde.workspace = true
+
+crypto.workspace = true
