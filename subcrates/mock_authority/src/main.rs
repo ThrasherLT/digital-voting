@@ -7,61 +7,16 @@ use std::{
     sync::Arc,
 };
 
-use actix_web::{get, post, routes, web, App, HttpResponse, HttpServer, Responder};
 use anyhow::{anyhow, bail, Result};
 use clap::Parser;
-use serde::{self, Deserialize, Serialize};
 
 use crypto::signature::blind_sign;
 use process_io::{cli::StdioReader, logging::start_logger};
-use tokio::{select, sync::oneshot, task::JoinHandle};
-use tracing::trace;
 
-#[derive(Parser, Clone, Debug)]
-pub struct Args {
-    #[clap(
-        long = "address",
-        default_value = "0.0.0.0:8080",
-        help = "Specify the ip:port on which to host the mock election authority HTTP server"
-    )]
-    pub addr: std::net::SocketAddr,
-    #[clap(
-        long = "new-keys",
-        default_value_t = false,
-        help = "Generate new blind signer keys instead of loading them from FS"
-    )]
-    pub new_keys: bool,
-    #[clap(
-        long = "no-http",
-        default_value_t = false,
-        help = "Only run CLI and do not start an http server"
-    )]
-    pub no_http_server: bool,
-    #[clap(
-        long = "no-cli",
-        default_value_t = false,
-        help = "Only run HTTP server and do not start a CLI interface"
-    )]
-    pub no_cli: bool,
-    #[clap(
-        long = "data-path",
-        default_value = "./data",
-        help = "Path to where log, config and similar files will be stored"
-    )]
-    pub data_path: PathBuf,
-}
+mod cli;
+mod server;
 
-#[derive(Parser, Clone, Debug)]
-pub enum Cmd {
-    #[clap(about = "Blind sign a blinded message")]
-    BlindSign {
-        blinded_msg: blind_sign::BlindedMessage,
-    },
-    #[clap(about = "Get blinder public key")]
-    GetPubkey,
-    #[clap(about = "Shut down the mock authority")]
-    Quit,
-}
+use cli::{Args, Cmd};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct AuthorityConfig {
@@ -84,10 +39,6 @@ impl AuthorityConfig {
 
         Ok(())
     }
-}
-
-struct AppState {
-    blind_signer: Arc<blind_sign::BlindSigner>,
 }
 
 fn new_blind_signer(path: &Path) -> Result<blind_sign::BlindSigner> {
@@ -138,11 +89,15 @@ async fn main() -> Result<()> {
         args.new_keys,
         &args.data_path.join("authority-config.json"),
     )?);
+    let frontend_path = std::env::current_exe()?
+        .parent()
+        .ok_or(anyhow!("Could not get parent dir of current executable"))?
+        .join("mock_authority_frontend");
 
     match (args.no_cli, args.no_http_server) {
         (true, true) => bail!("Authority needs at least CLI interface or HTTP server to run"),
         (true, false) => {
-            let (_stop_server, handle) = run_server(blind_signer, args.addr);
+            let (_stop_server, handle) = server::run(blind_signer, args.addr, frontend_path);
             handle.await??;
         }
         (false, true) => run_cli(
@@ -150,7 +105,7 @@ async fn main() -> Result<()> {
             args.data_path.join("authority-cmd-history.txt"),
         )?,
         (false, false) => {
-            let _server_shutdown = run_server(blind_signer.clone(), args.addr);
+            let _server_shutdown = server::run(blind_signer.clone(), args.addr, frontend_path);
             run_cli(
                 &blind_signer,
                 args.data_path.join("authority-cmd-history.txt"),
@@ -191,87 +146,4 @@ fn run_cli(blind_signer: &blind_sign::BlindSigner, cmd_history_path: PathBuf) ->
     }
 
     Ok(())
-}
-
-type Handle = (oneshot::Sender<()>, JoinHandle<Result<(), anyhow::Error>>);
-
-fn run_server(blind_signer: Arc<blind_sign::BlindSigner>, addr: std::net::SocketAddr) -> Handle {
-    let (tx, rx) = oneshot::channel::<()>();
-
-    let handle = tokio::spawn(async move {
-        let server = HttpServer::new(move || {
-            App::new()
-                .app_data(web::Data::new(AppState {
-                    blind_signer: blind_signer.clone(),
-                }))
-                .wrap(
-                    actix_cors::Cors::default()
-                        // TODO Probably should be more specific:
-                        .allow_any_origin()
-                        .allow_any_header()
-                        .allowed_methods(vec!["GET", "POST"])
-                        .max_age(3600),
-                )
-                .service(greet)
-                .service(authenticate)
-                .service(get_pkey)
-                .service(health)
-        })
-        .bind(addr)?;
-        trace!("Starting server");
-
-        select! {
-            _ = rx => {
-                Ok(())
-            },
-            _ = server.run() => {
-                bail!("Server stopped")
-            }
-        }
-    });
-
-    (tx, handle)
-}
-
-#[routes]
-#[get("/")]
-#[get("/index.html")]
-async fn greet() -> impl Responder {
-    trace!("GET root request");
-    HttpResponse::Ok().body("Hello, mock authority!\n")
-}
-
-#[post("/authenticate")]
-pub async fn authenticate(
-    verification_request: web::Json<VerificationRequest>,
-    data: web::Data<AppState>,
-) -> impl Responder {
-    trace!("POST /authenticate request");
-    match data
-        .blind_signer
-        .bling_sign(&verification_request.blinded_pkey)
-    {
-        Ok(blind_signature) => HttpResponse::Ok().json(blind_signature),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {e}")),
-    }
-}
-
-#[get("/pkey")]
-pub async fn get_pkey(data: web::Data<AppState>) -> impl Responder {
-    trace!("POST /pkey request");
-    match data.blind_signer.get_public_key() {
-        Ok(pkey) => HttpResponse::Ok().json(pkey.to_string()),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {e}")),
-    }
-}
-
-#[get("/health")]
-pub async fn health() -> impl Responder {
-    trace!("GET /health request");
-    HttpResponse::Ok()
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct VerificationRequest {
-    blinded_pkey: blind_sign::BlindedMessage,
 }
