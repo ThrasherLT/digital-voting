@@ -24,6 +24,7 @@ pub fn run(
                 .app_data(web::Data::new(AppState {
                     blind_signer: blind_signer.clone(),
                 }))
+                .wrap(tracing_actix_web::TracingLogger::default())
                 .wrap(
                     actix_cors::Cors::default()
                         // TODO Probably should be more specific:

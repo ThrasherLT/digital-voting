@@ -6,6 +6,12 @@ use std::process::Command;
 use std::str::FromStr;
 
 fn main() {
+    // TODO Disabling this on CI, because `trunk` hasn't been installed on CI yet.
+    if env::var("CI").is_ok() {
+        println!("Skipping build.rs because CI detected.");
+        return;
+    }
+
     let frontend_path = Path::new("frontend");
     let out_dir = PathBuf::from_str(&env::var("OUT_DIR").expect("Cargo should set OUT_DIR"))
         .expect("OUT_DIR to be a path");

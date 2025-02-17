@@ -22,6 +22,5 @@ reqwasm.workspace = true
 gloo-timers.workspace = true
 futures.workspace = true
 leptos-use.workspace = true
-serde.workspace = true
 
 crypto.workspace = true
