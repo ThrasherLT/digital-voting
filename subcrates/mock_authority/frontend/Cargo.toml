@@ -14,9 +14,7 @@ web-sys = "0.3.77"
 
 leptos.workspace = true
 tracing.workspace = true
-tracing-subscriber.workspace = true
 console_error_panic_hook.workspace = true
-tracing-subscriber-wasm.workspace = true
 anyhow.workspace = true
 reqwasm.workspace = true
 gloo-timers.workspace = true

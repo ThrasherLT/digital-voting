@@ -27,12 +27,6 @@ fn App() -> impl IntoView {
 }
 
 fn main() {
-    tracing_subscriber::fmt()
-        .with_writer(
-            tracing_subscriber_wasm::MakeConsoleWriter::default()
-                .map_trace_level_to(tracing::Level::DEBUG),
-        )
-        .init();
     console_error_panic_hook::set_once();
 
     mount_to_body(App);
