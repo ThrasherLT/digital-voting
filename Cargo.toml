@@ -41,7 +41,6 @@ tokio = { version = "1.43.0", features = ["full", "test-util"] }
 tracing-actix-web = "0.7.15"
 leptos = { version = "0.7.7", features = ["csr", "tracing"] }
 console_error_panic_hook = "0.1.7"
-tracing-subscriber-wasm = "0.1.0"
 reqwasm = "0.5.0"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 futures = "0.3.31"
