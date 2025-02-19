@@ -10,7 +10,7 @@ license = "Apache-2.0"
 repository = "https://github.com/ThrasherLT/digital-voting"
 
 [dependencies]
-codee = { version = "0.2.0", features = ["json_serde"] }
+codee = { version = "0.3.0", features = ["json_serde"] }
 anyhow = "1.0.91"
 
 leptos-use.workspace = true
