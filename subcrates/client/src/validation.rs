@@ -19,7 +19,7 @@ use crate::{
     utils,
 };
 
-// TODO Figure out a clean way to handle errors and excepts.
+// TODO Figure out a clean way to handle errors and excepts, since borrow checker is being really weird here.
 // TODO Blockchain validation must apply to all nodes of the same blockchain.
 
 #[component]
@@ -28,16 +28,22 @@ pub fn Validation(
     blockchain: ReadSignal<String>,
     access_tokens: RwSignal<AccessTokens>,
 ) -> impl IntoView {
-    let config = Config::load(&user.read(), &blockchain.read()).expect("Config to be loaded");
+    let (config, _) =
+        signal(Config::load(&user.read(), &blockchain.read()).expect("Config to be loaded"));
     let (signature, _) =
         signal(Signature::load(&user.read(), &blockchain.read()).expect("Signature to be loaded"));
 
     let (validators, _) = signal(
-        Validators::load(&config.election_config, &user.read(), &blockchain.read())
-            .expect("Validators to be loaded"),
+        Validators::load(
+            &config.read().election_config,
+            &user.read(),
+            &blockchain.read(),
+        )
+        .expect("Validators to be loaded"),
     );
 
     let entries = config
+        .read()
         .get_authorities()
         .into_iter()
         .zip(validators.read().get_blinded_pks())
@@ -46,7 +52,6 @@ pub fn Validation(
             let (blinded_pk, _) = signal(Some(format!("{}", blinded_pk)));
             let (get_error, set_error) = signal(None);
             let blind_signature_ref: NodeRef<html::Input> = NodeRef::new();
-
             let on_submit = move |ev: leptos::ev::SubmitEvent| {
                 // Stop the page from reloading:
                 ev.prevent_default();
@@ -67,6 +72,8 @@ pub fn Validation(
                                     &blockchain.read(),
                                     i,
                                     Some(access_token),
+                                    &config.read(),
+                                    &signature.read(),
                                 ) {
                                     set_error.set(Some(format!("Failed to save access token: {e}")))
                                 }

@@ -22,7 +22,7 @@ fn App() -> impl IntoView {
     view! {
         <h1>"Welcome to the mock election authority!"</h1>
         <p>"This is used only for testing and demonstration purposes."</p>
-        <BlindSigning/>
+        <BlindSigning />
     }
 }
 
@@ -129,12 +129,18 @@ pub fn Copyable(value: ReadSignal<Option<blind_sign::BlindSignature>>) -> impl I
     } = use_clipboard();
     view! {
         <Show when=move || value.with(Option::is_some) fallback=move || ()>
-            <input type="text" value=move || value.get().expect("Value to be some at this point").to_string() readonly />
+            <input
+                type="text"
+                value=move || value.get().expect("Value to be some at this point").to_string()
+                readonly
+            />
         </Show>
         <Show when=move || is_supported.get() && value.with(Option::is_some) fallback=|| ()>
             <button on:click={
                 let copy = copy.clone();
-                move |_| copy(&value.get().expect("Copyable value to be some after Show").to_string())
+                move |_| copy(
+                    &value.get().expect("Copyable value to be some after Show").to_string(),
+                )
             }>
                 <Show when=move || copied.get() fallback=move || "Copy">
                     "Copied!"

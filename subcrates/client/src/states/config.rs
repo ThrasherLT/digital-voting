@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 
-use protocol::config::ElectionConfig;
+use crypto::signature::blind_sign;
+use protocol::config::{Candidate, ElectionConfig};
 
 use crate::{states::user::User, storage::Storage};
 
@@ -36,6 +37,18 @@ impl Config {
             .iter()
             .map(|auth| auth.addr.clone())
             .collect()
+    }
+
+    pub fn get_authority_pk(&self, index: usize) -> &blind_sign::PublicKey {
+        &self.election_config.authorities[index].authority_key
+    }
+
+    pub fn get_nodes(&self) -> &Vec<String> {
+        &self.election_config.nodes
+    }
+
+    pub fn get_candidates(&self) -> &Vec<Candidate> {
+        &self.election_config.candidates
     }
 
     pub fn delete(user: &User, blockchain: &str) {
