@@ -4,8 +4,8 @@ use anyhow::{bail, Result};
 use leptos::{
     component,
     prelude::{
-        event_target_value, signal, ClassAttribute, CollectView, ElementChild, Get, OnAttribute,
-        Read, ReadSignal, Set, Show, Signal, WriteSignal,
+        event_target_value, signal, ClassAttribute, CollectView, ElementChild, Get,
+        GlobalAttributes, OnAttribute, Read, ReadSignal, Set, Show, Signal, WriteSignal,
     },
     task::spawn_local,
     view, IntoView,
@@ -23,6 +23,7 @@ use crate::{
 fn send_vote(
     user: Signal<User>,
     blockchain: ReadSignal<String>,
+    node: ReadSignal<Option<String>>,
     candidate_id: ReadSignal<Option<CandidateId>>,
     access_tokens: ReadSignal<AccessTokens>,
     set_candidate: WriteSignal<Option<Candidate>>,
@@ -30,6 +31,9 @@ fn send_vote(
 ) -> Result<()> {
     let Some(candidate_id) = candidate_id.get() else {
         bail!("Candidate ID is not selected");
+    };
+    let Some(node) = node.get() else {
+        bail!("Blockchain node not selected");
     };
 
     let vote = Vote::new(
@@ -39,16 +43,11 @@ fn send_vote(
         access_tokens.read().prepare()?,
     )?;
 
-    // For some reason `leptos` throws a "time not implemented on this platform" error,
-    // if we read from any signal within the `spawn_local` future.
-    let addr = blockchain.get().to_string();
-    let user = user.read();
-
     spawn_local(async move {
-        if let Err(e) = fetch::submit_vote(addr.clone(), Duration::from_secs(5), vote).await {
+        if let Err(e) = fetch::submit_vote(node.clone(), Duration::from_secs(5), vote).await {
             set_error.set(Some(format!("Failed to submit vote: {e}")));
         } else {
-            match Candidate::choose(candidate_id, &user, &addr) {
+            match Candidate::choose(candidate_id, &user.read(), &node) {
                 Ok(candidate) => set_candidate.set(Some(candidate)),
                 Err(e) => set_error.set(Some(format!("Failed to save candidate: {e}"))),
             }
@@ -66,18 +65,29 @@ pub fn CandidateSelection(
     access_tokens: ReadSignal<AccessTokens>,
 ) -> impl IntoView {
     let (get_error, set_error) = signal(None);
-    let (selected, set_selected) = signal(None);
+    let (selected_candidate, set_selected) = signal(None);
+    let (selected_node, set_selected_node) = signal(None);
 
-    let config =
-        Config::load(&user.read(), &blockchain.read()).expect("Config to exist at this point");
+    let (config, _) = signal(
+        Config::load(&user.read(), &blockchain.read()).expect("Config to exist at this point"),
+    );
+    // TODO Extra clone is required here to appease the borrow checker, but maybe it's possible to avoid it?
+    let node_options = config.read().get_nodes().clone();
+    let node_options = node_options
+        .iter()
+        .map(|node| {
+            view! { <option value=node.clone()>{node.clone()}</option> }
+        })
+        .collect_view();
+
     let candidates = config
-        .election_config
-        .candidates
+        .read()
+        .get_candidates()
         .into_iter()
         .map(|candidate| {
             view! {
                 <label>
-                    {candidate.name}
+                    {candidate.name.clone()}
                     <input
                         type="radio"
                         name="single-select"
@@ -99,15 +109,27 @@ pub fn CandidateSelection(
     view! {
         <h4>"Election Candidate Selection"</h4>
 
-        <label>"Select the candidate for whom you wish to vote for:" {candidates}</label>
+        <label for="node_select">"Select blockchain node: "</label>
+        <select
+            id="node_select"
+            on:change=move |ev| set_selected_node.set(Some(event_target_value(&ev)))
+        >
+            <option value="" selected=selected_node.read().is_none() disabled>
+                "Please select a node"
+            </option>
+            {node_options}
+        </select>
+        <p>"Selected node: " {selected_node}</p>
 
+        <label>"Select the candidate for whom you wish to vote for:" {candidates}</label>
         <button
-            disabled=move || selected.read().is_none()
+            disabled=move || selected_candidate.read().is_none() && selected_node.read().is_none()
             on:click=move |_| {
                 if let Err(e) = send_vote(
                     user,
                     blockchain,
-                    selected,
+                    selected_node,
+                    selected_candidate,
                     access_tokens,
                     set_candidate,
                     set_error,

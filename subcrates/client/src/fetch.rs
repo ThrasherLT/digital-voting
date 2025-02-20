@@ -2,7 +2,6 @@ use std::{pin::pin, time::Duration};
 
 use anyhow::{anyhow, bail, Result};
 use futures::future::{select, Either};
-use leptos::logging::log;
 use protocol::{config::ElectionConfig, vote::Vote};
 use reqwasm::http::Response;
 
@@ -20,7 +19,6 @@ pub async fn election_config(addr: String, timeout: Duration) -> Result<Election
 pub async fn submit_vote(addr: String, timeout: Duration, vote: Vote) -> Result<()> {
     let addr = format!("{addr}/vote");
     let vote = serde_json::to_string(&vote)?;
-    log!("{}", vote);
 
     let response = post(vote, &addr, timeout).await?;
     if response.status() != 200 {

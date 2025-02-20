@@ -3,7 +3,7 @@ use crypto::signature::blind_sign;
 
 use crate::storage::Storage;
 
-use super::user::User;
+use super::{config::Config, signature::Signature, user::User};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct AccessTokens(Vec<Option<blind_sign::Signature>>);
@@ -35,10 +35,17 @@ impl AccessTokens {
         blockchain: &str,
         index: usize,
         access_token: Option<blind_sign::Signature>,
+        config: &Config,
+        signature: &Signature,
     ) -> Result<()> {
         if self.0.len() <= index {
             bail!("Access token index does not exist");
         }
+        if let Some(access_token) = &access_token {
+            let verifier = blind_sign::Verifier::new(config.get_authority_pk(index).clone())?;
+            verifier.verify_signature(access_token.clone(), &signature.signer.get_public_key())?;
+        }
+
         self.0[index] = access_token;
         Storage::encrypt(&user.encryption, self)?
             .save(&Self::storage_key(&user.username, blockchain));
