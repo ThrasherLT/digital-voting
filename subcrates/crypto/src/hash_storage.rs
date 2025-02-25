@@ -19,4 +19,10 @@ impl Hash {
     {
         Hash(hash.as_ref().to_vec())
     }
+
+    /// Returns `0` as a hash.
+    #[must_use]
+    pub fn zero() -> Self {
+        Hash(0u8.to_le_bytes().to_vec())
+    }
 }

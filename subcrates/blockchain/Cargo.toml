@@ -11,16 +11,16 @@ repository = "https://github.com/ThrasherLT/digital-voting"
 
 [dependencies]
 digest = "0.10.7"
-blake3 = { version = "1.5.5", features = ["traits-preview"] }
-redb = "2.4.0"
 
 thiserror.workspace = true
 chrono.workspace = true
 serde.workspace = true
+blake3.workspace = true
+bincode.workspace = true
 
 crypto.workspace = true
 protocol.workspace = true
-bincode.workspace = true
+process_io.workspace = true
 
 [dev-dependencies]
 tempfile = "3.16.0"

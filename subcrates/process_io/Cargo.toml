@@ -13,7 +13,13 @@ repository = "https://github.com/ThrasherLT/digital-voting"
 rustyline = { version = "15.0.0", features = ["derive"] }
 shellwords = "1.1.0"
 tracing-appender = "0.2.3"
+redb = "2.4.0"
 
 tracing-subscriber.workspace = true
 tracing = { workspace = true, features = ["max_level_trace", "release_max_level_trace"] }
 thiserror.workspace = true
+
+[dev-dependencies]
+# This is useful for running tests that interract on he file system, but polluting the
+# file system with leftover files.
+tempfile = "3.16.0"

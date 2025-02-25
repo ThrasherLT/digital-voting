@@ -2,21 +2,23 @@ use std::path::Path;
 
 use crypto::hash_storage::Hash;
 use digest::Digest;
+use process_io::storage::{self, Storage};
 use protocol::timestamp::Timestamp;
 
-use crate::{
-    block::{self, Block},
-    storage::{self, Storage},
-};
+use crate::block::{self, Block};
 
-pub type Height = u128;
+/// Type for the height (number of blocks) of the blockchain.
+pub type Height = u64;
+
+/// The storage table name for the blockchain.
+pub const BLOCKCHAIN_TABLE: &str = "blockchain";
 
 /// Error type for block operations.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     /// Storage database issue.
     #[error("No block found for height key {}", .0)]
-    WrongKey(u128),
+    WrongKey(Height),
     /// Failed to save or load block from storage.
     #[error(transparent)]
     Storage(#[from] storage::Error),
@@ -32,7 +34,7 @@ where
     D: Digest,
 {
     /// How many blocks are currently in the blockchain.
-    block_count: u128,
+    block_count: Height,
     /// Hash of the last block added to the blockchain.
     /// Held in the structure for speed and convenience.
     last_hash: Hash,
@@ -41,7 +43,8 @@ where
     _last_timestamp: Timestamp,
     /// Handle to the storage, which is used for saving and loading individual
     /// blocks to and from storage.
-    storage: Storage,
+    // TODO Not sure of the implications of leaving lifetime to static here:
+    storage: Storage<'static, u64, Vec<u8>>,
     /// Phantom data marker which holds the type of the hashing algorithm that is used
     /// for this blockchain.
     _marker: std::marker::PhantomData<D>,
@@ -52,26 +55,40 @@ where
     D: Digest,
 {
     /// Create a new blockchain from a path to the file in which the blockchain will be
-    /// stored and a genesis block.
+    /// stored.
+    /// If a database at that path already exists, it will be opened instead of created.
     ///
     /// # Errors
     ///
-    /// If Saving creating storage or saving genesis block fails.
-    pub fn new(database_file_path: &Path, genesis: Block) -> Result<Self> {
-        let storage = Storage::new(database_file_path)?;
+    /// If creating storage or saving genesis block fails.
+    pub fn new(database_file_path: &Path) -> Result<Self> {
+        match Storage::open(database_file_path, BLOCKCHAIN_TABLE) {
+            Ok(storage) => {
+                let block_count = storage.len()?;
+                let last_block = Block::load(block_count - 1, &storage)?;
 
-        genesis.save(0, &storage)?;
+                Ok(Self {
+                    block_count,
+                    last_hash: last_block.prev_block_hash,
+                    _last_timestamp: last_block.timestamp,
+                    storage,
+                    _marker: std::marker::PhantomData,
+                })
+            }
+            Err(storage::Error::DoesNotExist) => {
+                let storage = Storage::new(database_file_path, BLOCKCHAIN_TABLE)?;
 
-        Ok(Self {
-            block_count: 1,
-            last_hash: genesis.prev_block_hash,
-            _last_timestamp: genesis.timestamp,
-            storage,
-            _marker: std::marker::PhantomData,
-        })
+                Ok(Self {
+                    block_count: 0,
+                    last_hash: Hash::zero(),
+                    _last_timestamp: chrono::Utc::now(),
+                    storage,
+                    _marker: std::marker::PhantomData,
+                })
+            }
+            Err(e) => Err(e.into()),
+        }
     }
-
-    // TODO Load?
 
     /// Add a new block to the blockchain.
     ///
@@ -95,5 +112,17 @@ where
         let block = Block::load(height, &self.storage)?;
 
         Ok(block)
+    }
+
+    /// Get the number of currently stored blocks in the blockchain.
+    #[must_use]
+    pub fn len(&self) -> Height {
+        self.block_count
+    }
+
+    /// Return `true`, if no blocks had been written to the blockchain yet.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.block_count == 0
     }
 }
