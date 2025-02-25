@@ -143,10 +143,7 @@ where
         // and will return error.
         // TODO Make sure that we're not missing any edge cases here.
         match read_txn.open_table(self.table) {
-            Ok(table) => {
-                Ok(table.len()?)
-
-            },
+            Ok(table) => Ok(table.len()?),
             Err(redb::TableError::TableDoesNotExist(_)) => Ok(0),
             Err(e) => Err(e.into()),
         }
