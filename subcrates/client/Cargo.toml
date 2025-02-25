@@ -11,7 +11,7 @@ repository = "https://github.com/ThrasherLT/digital-voting"
 
 [dependencies]
 codee = { version = "0.2.0", features = ["json_serde"] }
-anyhow = "1.0.91"
+anyhow = "1.0.96"
 
 leptos-use.workspace = true
 futures.workspace = true
