@@ -1,3 +1,5 @@
+//! Code for storage on the host machine.
+
 use std::path::Path;
 
 use redb::{Database, ReadableTableMetadata, TableDefinition};

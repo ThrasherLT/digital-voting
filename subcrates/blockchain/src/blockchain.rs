@@ -1,7 +1,10 @@
+//! Generic blockchain related code.
+
 use std::path::Path;
 
-use crypto::hash_storage::Hash;
 use digest::Digest;
+
+use crypto::hash_storage::Hash;
 use process_io::storage::{self, Storage};
 use protocol::timestamp::Timestamp;
 
@@ -97,8 +100,8 @@ where
     /// If Saving block to storage fails.
     pub fn add_block(&mut self, block: &Block) -> Result<()> {
         self.last_hash = block.calculate_hash::<D>();
-        self.block_count += 1;
         block.save(self.block_count, &self.storage)?;
+        self.block_count += 1;
 
         Ok(())
     }
@@ -124,5 +127,25 @@ where
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.block_count == 0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_blockchain() {
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let mut blockchain = Blockchain::<blake3::Hasher>::new(temp_file.path()).unwrap();
+        let block0 = Block::new(0, vec![1, 2, 3], Hash::zero());
+        let block1 = Block::new(0, vec![3, 2, 1], block0.calculate_hash::<blake3::Hasher>());
+
+        assert!(blockchain.is_empty());
+        blockchain.add_block(&block0).unwrap();
+        blockchain.add_block(&block1).unwrap();
+        assert_eq!(blockchain.len(), 2);
+
+        assert_eq!(blockchain.get_block(0).unwrap(), block0);
     }
 }

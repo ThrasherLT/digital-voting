@@ -1,3 +1,5 @@
+//! Code related to single blocks of the generic blockchain.
+
 use crypto::hash_storage::Hash;
 use digest::Digest;
 use process_io::storage::{self, Storage};
@@ -21,7 +23,7 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 /// Datastructure of a single block of a blockchain.
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 pub struct Block {
     /// Because data is stored as binary, this is needed for parsing to know what type
     /// of data should be parsed.
