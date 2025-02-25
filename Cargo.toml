@@ -55,7 +55,6 @@ blockchain = { version = "*", path = "./subcrates/blockchain" }
 [dependencies]
 actix-cors.workspace = true
 actix-web.workspace = true
-blake3.workspace = true
 clap.workspace = true
 tracing-actix-web.workspace = true
 tokio.workspace = true
