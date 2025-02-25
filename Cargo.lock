@@ -665,7 +665,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
- "codee 0.2.0",
+ "codee 0.3.0",
  "console_error_panic_hook",
  "crypto",
  "futures",
@@ -696,8 +696,6 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d3ad3122b0001c7f140cf4d605ef9a9e2c24d96ab0b4fb4347b76de2425f445"
 dependencies = [
- "serde",
- "serde_json",
  "thiserror 1.0.69",
 ]
 
