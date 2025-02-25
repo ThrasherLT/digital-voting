@@ -1,3 +1,5 @@
+//! Code for collecting traces to a log file.
+
 use std::path::Path;
 
 use tracing::level_filters::LevelFilter;

@@ -1,18 +1,18 @@
+//! Code related to single blocks of the generic blockchain.
+
 use crypto::hash_storage::Hash;
 use digest::Digest;
+use process_io::storage::{self, Storage};
 use protocol::timestamp::{self, Timestamp};
 
-use crate::{
-    blockchain::Height,
-    storage::{self, Storage},
-};
+use crate::blockchain::Height;
 
 /// Error type for block operations.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     /// Storage database issue.
     #[error("No block found for height key {}", .0)]
-    WrongKey(u128),
+    WrongKey(Height),
     /// Failed to save or load block from storage.
     #[error("Block storage failed {}", .0)]
     Storage(#[from] storage::Error),
@@ -23,17 +23,17 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 /// Datastructure of a single block of a blockchain.
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 pub struct Block {
     /// Because data is stored as binary, this is needed for parsing to know what type
     /// of data should be parsed.
-    pub value_type_id: u16,
+    pub(crate) value_type_id: u16,
     /// The actual data that is stored, but in bytes.
-    pub value: Vec<u8>,
+    pub(crate) value: Vec<u8>,
     /// The timestamp at which this struct had been created.
-    pub timestamp: Timestamp,
+    pub(crate) timestamp: Timestamp,
     /// Hash of the previous block in the blockchain.
-    pub prev_block_hash: Hash,
+    pub(crate) prev_block_hash: Hash,
 }
 
 impl Block {
@@ -78,7 +78,7 @@ impl Block {
     /// # Errors
     ///
     /// If serialization or writing to storage fails.
-    pub fn save(&self, height: Height, storage: &Storage) -> Result<()> {
+    pub fn save(&self, height: Height, storage: &Storage<u64, Vec<u8>>) -> Result<()> {
         storage.write(height, bincode::serialize(self)?)?;
 
         Ok(())
@@ -89,7 +89,7 @@ impl Block {
     /// # Errors
     ///
     /// If reading from storage fails, deserialization fails, or key is invalid
-    pub fn load(height: Height, storage: &Storage) -> Result<Self> {
+    pub fn load(height: Height, storage: &Storage<u64, Vec<u8>>) -> Result<Self> {
         let block_bytes = storage.read(height)?.ok_or(Error::WrongKey(height))?;
 
         Ok(bincode::deserialize(&block_bytes)?)
@@ -102,13 +102,15 @@ mod tests {
 
     use chrono::Utc;
 
+    use crate::blockchain::BLOCKCHAIN_TABLE;
+
     use super::*;
 
     #[test]
     fn test_block() {
         use blake3::Hasher;
         let temp_file = tempfile::NamedTempFile::new().unwrap();
-        let storage = Storage::new(temp_file.path()).unwrap();
+        let storage = Storage::new(temp_file.path(), BLOCKCHAIN_TABLE).unwrap();
 
         let values = vec![
             (2u16, vec![1u8, 2u8, 3u8, 4u8]),
